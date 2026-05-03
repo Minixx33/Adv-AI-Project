@@ -1,0 +1,4 @@
+day,round,target_player,target_role,sigma,trust,belief_wolf,combined_score,d1,d2,d3,d4,d5,E,delta_sigma
+2,5,P4,WEREWOLF,0.45,0.55,0.6667,0.58,0.0,0.0,0.0,0.0,0.0,0.0,-0.05
+2,5,P6,SEER,0.45,0.55,0.6667,0.58,0.0,0.0,0.0,0.0,0.0,0.0,-0.05
+2,5,P7,WEREWOLF,0.45,0.55,0.6667,0.58,0.0,0.0,0.0,0.0,0.0,0.0,-0.05

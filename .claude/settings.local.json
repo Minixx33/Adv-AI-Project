@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c ' *)",
+      "Bash(python run_experiments.py -n 200 --seed 7 --output results/smoke_test.csv)"
+    ]
+  }
+}

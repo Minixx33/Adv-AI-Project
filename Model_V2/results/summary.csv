@@ -1,0 +1,2 @@
+game_id,n_players,winner,n_days,suspicion_agent_id,suspicion_agent_role,suspicion_agent_survived,suspicion_agent_won,correct_wolf_votes,total_votes,false_accusations
+0,8,WOLF,2,P6,VILLAGER,False,False,2,14,12

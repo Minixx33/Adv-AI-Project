@@ -1,0 +1,139 @@
+=== SUSPICION AGENT TRACE: P8 (BayesianAgent+Suspicion) ===
+True role: POSSESSED
+
+--- DAY 1, END OF ROUND 0 ---
+
+Bayesian beliefs P(p = wolf):
+  P1: 0.29    P2: 0.29    P3: 0.29    P4: 0.29
+  P5: 0.29    P6: 0.29    P7: 0.29
+
+Suspicion scores σ(p):
+  P1: 0.50    P2: 0.50    P3: 0.50    P4: 0.50
+  P5: 0.50    P6: 0.50    P7: 0.50
+
+Detector activations this round:
+  P1:
+    D1 (vote-accusation mismatch): 0.00
+    D2 (bandwagon):                0.00
+    D3 (pressure-trigger):         0.00
+    D4 (protection):               0.00
+    D5 (claim consistency):        0.00
+    Composite E(P1): 0.00           -> suspicion DECREASED to 0.50
+
+  P2:
+    D1 (vote-accusation mismatch): 0.00
+    D2 (bandwagon):                0.00
+    D3 (pressure-trigger):         0.00
+    D4 (protection):               0.00
+    D5 (claim consistency):        0.00
+    Composite E(P2): 0.00           -> suspicion DECREASED to 0.50
+
+  P3:
+    D1 (vote-accusation mismatch): 0.00
+    D2 (bandwagon):                0.00
+    D3 (pressure-trigger):         0.00
+    D4 (protection):               0.00
+    D5 (claim consistency):        0.00
+    Composite E(P3): 0.00           -> suspicion DECREASED to 0.50
+
+  P4:
+    D1 (vote-accusation mismatch): 0.00
+    D2 (bandwagon):                0.00
+    D3 (pressure-trigger):         0.00
+    D4 (protection):               0.00
+    D5 (claim consistency):        0.00
+    Composite E(P4): 0.00           -> suspicion DECREASED to 0.50
+
+  P5:
+    D1 (vote-accusation mismatch): 0.00
+    D2 (bandwagon):                0.00
+    D3 (pressure-trigger):         0.00
+    D4 (protection):               0.00
+    D5 (claim consistency):        0.00
+    Composite E(P5): 0.00           -> suspicion DECREASED to 0.50
+
+  P6:
+    D1 (vote-accusation mismatch): 0.00
+    D2 (bandwagon):                0.00
+    D3 (pressure-trigger):         0.00
+    D4 (protection):               0.00
+    D5 (claim consistency):        0.00
+    Composite E(P6): 0.00           -> suspicion DECREASED to 0.50
+
+  P7:
+    D1 (vote-accusation mismatch): 0.00
+    D2 (bandwagon):                0.00
+    D3 (pressure-trigger):         0.00
+    D4 (protection):               0.00
+    D5 (claim consistency):        0.00
+    Composite E(P7): 0.00           -> suspicion DECREASED to 0.50
+
+Combined decision scores: score(p) = 0.6*belief + 0.4*σ
+  P1: 0.37    P2: 0.37    P3: 0.37    P4: 0.37
+  P5: 0.37    P6: 0.37    P7: 0.37
+
+DECISION: Vote P1 (highest combined score)
+RATIONALE:
+  - Highest belief that P1 is wolf: 0.29
+  - Highest suspicion: 0.50
+
+--- DAY 2, END OF ROUND 0 ---
+
+Bayesian beliefs P(p = wolf):
+  P3: 0.40    P4: 0.40    P5: 0.40    P6: 0.40
+  P7: 0.40
+
+Suspicion scores σ(p):
+  P3: 0.50    P4: 0.50    P5: 0.50    P6: 0.50
+  P7: 0.50
+
+Detector activations this round:
+  P3:
+    D1 (vote-accusation mismatch): 0.00
+    D2 (bandwagon):                0.00
+    D3 (pressure-trigger):         0.00
+    D4 (protection):               0.00
+    D5 (claim consistency):        0.00
+    Composite E(P3): 0.00           -> suspicion DECREASED to 0.50
+
+  P4:
+    D1 (vote-accusation mismatch): 0.00
+    D2 (bandwagon):                0.00
+    D3 (pressure-trigger):         0.00
+    D4 (protection):               0.00
+    D5 (claim consistency):        0.00
+    Composite E(P4): 0.00           -> suspicion DECREASED to 0.50
+
+  P5:
+    D1 (vote-accusation mismatch): 0.00
+    D2 (bandwagon):                0.00
+    D3 (pressure-trigger):         0.00
+    D4 (protection):               0.00
+    D5 (claim consistency):        0.00
+    Composite E(P5): 0.00           -> suspicion DECREASED to 0.50
+
+  P6:
+    D1 (vote-accusation mismatch): 0.00
+    D2 (bandwagon):                0.00
+    D3 (pressure-trigger):         0.00
+    D4 (protection):               0.00
+    D5 (claim consistency):        0.00
+    Composite E(P6): 0.00           -> suspicion DECREASED to 0.50
+
+  P7:
+    D1 (vote-accusation mismatch): 0.00
+    D2 (bandwagon):                0.00
+    D3 (pressure-trigger):         0.00
+    D4 (protection):               0.00
+    D5 (claim consistency):        0.00
+    Composite E(P7): 0.00           -> suspicion DECREASED to 0.50
+
+Combined decision scores: score(p) = 0.6*belief + 0.4*σ
+  P3: 0.44    P4: 0.44    P5: 0.44    P6: 0.44
+  P7: 0.44
+
+DECISION: Vote P3 (highest combined score)
+RATIONALE:
+  - Highest belief that P3 is wolf: 0.40
+  - Highest suspicion: 0.50
+

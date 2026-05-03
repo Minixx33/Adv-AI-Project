@@ -1,0 +1,407 @@
+=== GAME 0 — 8 PLAYERS ===
+Roles (revealed at end):
+  P1: VILLAGER (RandomAgent)
+  P2: VILLAGER (RandomAgent)
+  P3: VILLAGER (HeuristicAgent)
+  P4: WEREWOLF (HeuristicAgent)
+  P5: VILLAGER (BayesianAgent)
+  P6: SEER (BayesianAgent)
+  P7: WEREWOLF (BayesianAgent)
+  P8: POSSESSED (BayesianAgent+Suspicion)
+
+--- DAY 1 ---
+[Round 1]
+P4: VOTE P6
+P4: ATTACK P6
+P4: Over
+
+P5: ESTIMATE P1 WEREWOLF
+P5: ATTACK P1
+P5: BECAUSE vote_pattern
+P5: VOTE P1
+P5: Over
+
+P7: ESTIMATE P1 WEREWOLF
+P7: ATTACK P1
+P7: BECAUSE vote_pattern
+P7: VOTE P1
+P7: Over
+
+P8: ESTIMATE P1 WEREWOLF
+P8: ATTACK P1
+P8: BECAUSE vote_pattern
+P8: VOTE P1
+P8: Over
+
+P3: VOTE P1
+P3: AGREE P8
+P3: ATTACK P1
+P3: Over
+
+P6: ESTIMATE P1 WEREWOLF
+P6: ATTACK P1
+P6: BECAUSE vote_pattern
+P6: VOTE P1
+P6: Over
+
+P1: Skip
+
+P2: VOTE P6
+P2: Over
+
+[Round 2]
+P4: VOTE P1
+P4: AGREE P6
+P4: ATTACK P1
+P4: Over
+
+P8: ESTIMATE P1 WEREWOLF
+P8: ATTACK P1
+P8: BECAUSE vote_pattern
+P8: VOTE P1
+P8: Over
+
+P3: VOTE P1
+P3: AGREE P8
+P3: ATTACK P1
+P3: Over
+
+P1: Skip
+
+P5: ESTIMATE P1 WEREWOLF
+P5: ATTACK P1
+P5: BECAUSE vote_pattern
+P5: VOTE P1
+P5: Over
+
+P7: ESTIMATE P1 WEREWOLF
+P7: ATTACK P1
+P7: BECAUSE vote_pattern
+P7: VOTE P1
+P7: Over
+
+P6: ESTIMATE P1 WEREWOLF
+P6: ATTACK P1
+P6: BECAUSE vote_pattern
+P6: VOTE P1
+P6: Over
+
+P2: VOTE P4
+P2: Over
+
+[Round 3]
+P4: VOTE P1
+P4: AGREE P6
+P4: ATTACK P1
+P4: Over
+
+P6: ESTIMATE P1 WEREWOLF
+P6: ATTACK P1
+P6: BECAUSE vote_pattern
+P6: VOTE P1
+P6: Over
+
+P3: VOTE P1
+P3: AGREE P6
+P3: ATTACK P1
+P3: Over
+
+P5: ESTIMATE P1 WEREWOLF
+P5: ATTACK P1
+P5: BECAUSE vote_pattern
+P5: VOTE P1
+P5: Over
+
+P2: VOTE P7
+P2: VOTE P7
+P2: Over
+
+P7: ESTIMATE P1 WEREWOLF
+P7: ATTACK P1
+P7: BECAUSE vote_pattern
+P7: VOTE P1
+P7: Over
+
+P8: ESTIMATE P1 WEREWOLF
+P8: ATTACK P1
+P8: BECAUSE vote_pattern
+P8: VOTE P1
+P8: Over
+
+P1: VOTE P4
+P1: VOTE P4
+P1: Over
+
+[Round 4]
+P3: VOTE P1
+P3: AGREE P8
+P3: ATTACK P1
+P3: Over
+
+P2: Skip
+
+P1: Skip
+
+P8: ESTIMATE P1 WEREWOLF
+P8: ATTACK P1
+P8: BECAUSE vote_pattern
+P8: VOTE P1
+P8: Over
+
+P5: ESTIMATE P1 WEREWOLF
+P5: ATTACK P1
+P5: BECAUSE vote_pattern
+P5: VOTE P1
+P5: Over
+
+P7: ESTIMATE P1 WEREWOLF
+P7: ATTACK P1
+P7: BECAUSE vote_pattern
+P7: VOTE P1
+P7: Over
+
+P6: ESTIMATE P1 WEREWOLF
+P6: ATTACK P1
+P6: BECAUSE vote_pattern
+P6: VOTE P1
+P6: Over
+
+P4: VOTE P1
+P4: AGREE P6
+P4: ATTACK P1
+P4: Over
+
+[Round 5]
+P6: ESTIMATE P1 WEREWOLF
+P6: ATTACK P1
+P6: BECAUSE vote_pattern
+P6: VOTE P1
+P6: Over
+
+P3: VOTE P1
+P3: AGREE P6
+P3: ATTACK P1
+P3: Over
+
+P8: ESTIMATE P1 WEREWOLF
+P8: ATTACK P1
+P8: BECAUSE vote_pattern
+P8: VOTE P1
+P8: Over
+
+P4: VOTE P1
+P4: AGREE P8
+P4: ATTACK P1
+P4: Over
+
+P2: VOTE P1
+P2: Over
+
+P1: Skip
+
+P7: ESTIMATE P1 WEREWOLF
+P7: ATTACK P1
+P7: BECAUSE vote_pattern
+P7: VOTE P1
+P7: Over
+
+P5: ESTIMATE P1 WEREWOLF
+P5: ATTACK P1
+P5: BECAUSE vote_pattern
+P5: VOTE P1
+P5: Over
+
+[Voting Phase — Day 1]
+  P1 -> P3    P2 -> P8    P3 -> P1    P4 -> P1
+  P5 -> P1    P6 -> P1    P7 -> P1    P8 -> P1
+Tally: P1(6), P3(1), P8(1)
+Eliminated: P1 (was VILLAGER)
+
+--- NIGHT 1 ---
+Seer P6 divined P2 -> HUMAN
+Wolves attacked: P4->P2, P7->P2
+Killed overnight: P2 (was VILLAGER)
+
+--- DAY 2 ---
+[Round 1]
+P8: ESTIMATE P3 WEREWOLF
+P8: ATTACK P3
+P8: BECAUSE vote_pattern
+P8: VOTE P3
+P8: Over
+
+P6: COMINGOUT P6 SEER
+P6: DIVINED P2 HUMAN
+P6: BECAUSE divine_result
+P6: Over
+
+P4: VOTE P3
+P4: AGREE P8
+P4: ATTACK P3
+P4: Over
+
+P7: ESTIMATE P3 WEREWOLF
+P7: ATTACK P3
+P7: BECAUSE vote_pattern
+P7: VOTE P3
+P7: Over
+
+P3: VOTE P4
+P3: ATTACK P4
+P3: Over
+
+P5: ESTIMATE P3 WEREWOLF
+P5: ATTACK P3
+P5: BECAUSE vote_pattern
+P5: VOTE P3
+P5: Over
+
+[Round 2]
+P6: ESTIMATE P3 WEREWOLF
+P6: ATTACK P3
+P6: BECAUSE vote_pattern
+P6: VOTE P3
+P6: Over
+
+P4: VOTE P3
+P4: AGREE P6
+P4: ATTACK P3
+P4: Over
+
+P3: VOTE P4
+P3: ATTACK P4
+P3: Over
+
+P7: ESTIMATE P3 WEREWOLF
+P7: ATTACK P3
+P7: BECAUSE vote_pattern
+P7: VOTE P3
+P7: Over
+
+P8: ESTIMATE P3 WEREWOLF
+P8: ATTACK P3
+P8: BECAUSE vote_pattern
+P8: VOTE P3
+P8: Over
+
+P5: ESTIMATE P3 WEREWOLF
+P5: ATTACK P3
+P5: BECAUSE vote_pattern
+P5: VOTE P3
+P5: Over
+
+[Round 3]
+P5: ESTIMATE P3 WEREWOLF
+P5: ATTACK P3
+P5: BECAUSE vote_pattern
+P5: VOTE P3
+P5: Over
+
+P4: VOTE P3
+P4: AGREE P5
+P4: ATTACK P3
+P4: Over
+
+P8: ESTIMATE P3 WEREWOLF
+P8: ATTACK P3
+P8: BECAUSE vote_pattern
+P8: VOTE P3
+P8: Over
+
+P6: ESTIMATE P3 WEREWOLF
+P6: ATTACK P3
+P6: BECAUSE vote_pattern
+P6: VOTE P3
+P6: Over
+
+P3: VOTE P4
+P3: ATTACK P4
+P3: Over
+
+P7: ESTIMATE P3 WEREWOLF
+P7: ATTACK P3
+P7: BECAUSE vote_pattern
+P7: VOTE P3
+P7: Over
+
+[Round 4]
+P4: VOTE P3
+P4: AGREE P7
+P4: ATTACK P3
+P4: Over
+
+P3: VOTE P4
+P3: ATTACK P4
+P3: Over
+
+P6: ESTIMATE P3 WEREWOLF
+P6: ATTACK P3
+P6: BECAUSE vote_pattern
+P6: VOTE P3
+P6: Over
+
+P5: ESTIMATE P3 WEREWOLF
+P5: ATTACK P3
+P5: BECAUSE vote_pattern
+P5: VOTE P3
+P5: Over
+
+P7: ESTIMATE P3 WEREWOLF
+P7: ATTACK P3
+P7: BECAUSE vote_pattern
+P7: VOTE P3
+P7: Over
+
+P8: ESTIMATE P3 WEREWOLF
+P8: ATTACK P3
+P8: BECAUSE vote_pattern
+P8: VOTE P3
+P8: Over
+
+[Round 5]
+P4: VOTE P3
+P4: AGREE P8
+P4: ATTACK P3
+P4: Over
+
+P6: ESTIMATE P3 WEREWOLF
+P6: ATTACK P3
+P6: BECAUSE vote_pattern
+P6: VOTE P3
+P6: Over
+
+P5: ESTIMATE P3 WEREWOLF
+P5: ATTACK P3
+P5: BECAUSE vote_pattern
+P5: VOTE P3
+P5: Over
+
+P7: ESTIMATE P3 WEREWOLF
+P7: ATTACK P3
+P7: BECAUSE vote_pattern
+P7: VOTE P3
+P7: Over
+
+P3: VOTE P4
+P3: ATTACK P4
+P3: Over
+
+P8: ESTIMATE P3 WEREWOLF
+P8: ATTACK P3
+P8: BECAUSE vote_pattern
+P8: VOTE P3
+P8: Over
+
+[Voting Phase — Day 2]
+  P3 -> P4    P4 -> P3    P5 -> P3    P6 -> P3
+  P7 -> P3    P8 -> P3
+Tally: P3(5), P4(1)
+Eliminated: P3 (was VILLAGER)
+
+--- NIGHT 2 ---
+Seer P6 divined P4 -> WEREWOLF
+Wolves attacked: P4->P5, P7->P5
+Killed overnight: P5 (was VILLAGER)
+
+
+=== RESULT: WOLF WINS in 2 days ===

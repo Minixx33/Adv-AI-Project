@@ -1,0 +1,15 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "start.py",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/tut/start.py",
+            "args": ["-h", "localhost", "-p", "10000", "-n", "tut"],
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "python": "${workspaceFolder}/env38/Scripts/python.exe"
+        }
+    ]
+}

@@ -1,0 +1,29 @@
+{
+  "game_id": 0,
+  "n_players": 5,
+  "winner": "WOLF",
+  "n_days": 2,
+  "roles": {
+    "1": "SEER",
+    "2": "POSSESSED",
+    "3": "VILLAGER",
+    "4": "VILLAGER",
+    "5": "WEREWOLF"
+  },
+  "agents": {
+    "1": "RandomAgent",
+    "2": "HeuristicAgent",
+    "3": "BayesianAgent",
+    "4": "BayesianAgent",
+    "5": "BayesianAgent"
+  },
+  "final_status": {
+    "1": "DEAD",
+    "2": "DEAD",
+    "3": "DEAD",
+    "4": "ALIVE",
+    "5": "ALIVE"
+  },
+  "suspicion_agent_id": null,
+  "suspicion_agent_role": null
+}
