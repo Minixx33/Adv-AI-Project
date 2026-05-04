@@ -181,4 +181,8 @@ cython_debug/
 .cursorindexingignore
 
 #Other Files
-*/results*
+# Experiment results — keep summary files, ignore per-game folders
+Model_V2/results/**/game_*/
+
+# Un-ignore run logs (overrides *.log rule below)
+!Model_V2/results/**/run_*.log

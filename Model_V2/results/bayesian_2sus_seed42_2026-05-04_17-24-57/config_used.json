@@ -1,0 +1,30 @@
+{
+  "games": 10000,
+  "players": 8,
+  "suspicion_agent_type": "bayesian",
+  "output_dir": "./results/bayesian_2sus_seed42_2026-05-04_17-24-57",
+  "seed": 42,
+  "verbose": false,
+  "grid_search": false,
+  "max_talk_rounds": 5,
+  "suspicion_weights": {
+    "a1": 0.5784213530175063,
+    "a2": 0.023807669392977758,
+    "a3": 0.010002057138138887,
+    "a4": 0.031743559190637094,
+    "a5": 0.35602536126073997,
+    "w1": 0.231484,
+    "w2": 0.768516
+  },
+  "mcts_simulations": 500,
+  "mcts_depth": 5,
+  "agent_composition": {
+    "bayesian": 6,
+    "bayesian_with_suspicion": 2
+  },
+  "wolf_strategies": {
+    "bus_driver_probability": 0.2,
+    "false_claimer_probability": 0.5
+  },
+  "run_name": "bayesian_2sus_seed42"
+}
