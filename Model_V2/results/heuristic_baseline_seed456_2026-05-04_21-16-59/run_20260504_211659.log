@@ -102,16 +102,16 @@ Agent composition:  8x Heuristic
 
 ====================================================
   Run complete : 10000 games
-  Output dir  : ./results/heuristic_baseline_seed123_2026-05-04_21-05-19
+  Output dir  : ./results/heuristic_baseline_seed456_2026-05-04_21-16-59
 ----------------------------------------------------
-  Village wins : 1644/10000  (16.4%)
-  Wolf wins    : 8356/10000  (83.6%)
+  Village wins : 1624/10000  (16.2%)
+  Wolf wins    : 8376/10000  (83.8%)
   Avg days     : 2.45
 ----------------------------------------------------
-  Total votes       : 157988
-  Wolf vote prec.   : 0.252
-  Wolf vote recall  : 0.527
-  False accuse rate : 0.748
+  Total votes       : 158028
+  Wolf vote prec.   : 0.251
+  Wolf vote recall  : 0.526
+  False accuse rate : 0.749
   Avg wolves exec'd : 0.67
 ====================================================
 
