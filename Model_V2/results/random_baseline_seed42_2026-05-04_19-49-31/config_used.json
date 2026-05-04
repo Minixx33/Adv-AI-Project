@@ -1,0 +1,29 @@
+{
+  "games": 10000,
+  "players": 8,
+  "suspicion_agent_type": "none",
+  "output_dir": "./results/random_baseline_seed42_2026-05-04_19-49-31",
+  "seed": 42,
+  "verbose": false,
+  "grid_search": false,
+  "max_talk_rounds": 5,
+  "suspicion_weights": {
+    "a1": 0.3,
+    "a2": 0.15,
+    "a3": 0.2,
+    "a4": 0.2,
+    "a5": 0.15,
+    "w1": 0.6,
+    "w2": 0.4
+  },
+  "mcts_simulations": 500,
+  "mcts_depth": 5,
+  "agent_composition": {
+    "random": 8
+  },
+  "wolf_strategies": {
+    "bus_driver_probability": 0.2,
+    "false_claimer_probability": 0.5
+  },
+  "run_name": "random_baseline_seed42"
+}
