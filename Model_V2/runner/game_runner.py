@@ -43,15 +43,15 @@ _MODEL_V2 = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _MODEL_V2 not in sys.path:
     sys.path.insert(0, _MODEL_V2)
 
-from werewolf.game        import WerewolfGame
+from werewolf.game         import WerewolfGame
 from werewolf.role_assigner import assign_roles
-from werewolf.const       import ROLE_CONFIG, Team, Role
-from werewolf.agents.random_agent   import RandomAgent
+from werewolf.const        import ROLE_CONFIG, Team, Role
+from werewolf.agents.random_agent    import RandomAgent
 from werewolf.agents.heuristic_agent import HeuristicAgent
 from werewolf.agents.bayesian_agent  import BayesianAgent
-from werewolf.agents.mcts_agent     import MCTSAgent
-from werewolf.agents.logic_agent    import LogicAgent
-from suspicion.enhanced_agent       import EnhancedAgent
+from werewolf.agents.mcts_agent      import MCTSAgent
+from werewolf.agents.logic_agent     import LogicAgent
+from suspicion.enhanced_agent        import EnhancedAgent
 
 from runner.xlsx_exporter    import XlsxExporter
 from runner.evolution_logger import EvolutionLogger
@@ -70,18 +70,40 @@ _TYPE_SHORT = {
     "mcts_with_suspicion":      "mcts_susp",
 }
 
-_SUMMARY_FIELDS = [
-    "game_id", "n_players", "winner", "n_days",
+_SUMMARY_FIELDS = (
+    # Outcome
+    ["game_id", "n_players", "winner", "village_win", "n_days",
+    # Suspicion agents
+    "n_suspicion_agents",
     "suspicion_agent_id", "suspicion_agent_role",
     "suspicion_agent_survived", "suspicion_agent_won",
-    "correct_wolf_votes", "total_votes", "false_accusations",
-] + [f"{s}_correct_pct" for s in _TYPE_SHORT.values()]
+    "n_susp_agents_survived", "n_susp_agents_won",
+    # Vote metrics (plan sec 11)
+    "total_votes", "correct_wolf_votes", "false_accusations",
+    "wolf_vote_precision", "wolf_vote_recall", "false_accusation_rate",
+    # Wolf elimination
+    "total_wolves", "wolves_executed", "day_first_wolf_executed",]
+    # Per-agent-type vote counts + accuracy
+    + [f"{s}_votes"       for s in _TYPE_SHORT.values()]
+    + [f"{s}_correct_pct" for s in _TYPE_SHORT.values()]
+    # Suspicion calibration
+    + ["mean_sigma_wolves", "mean_sigma_nonwolves", "sigma_gap",
+       "mean_combined_wolves", "mean_combined_nonwolves", "combined_gap",
+    # Detector means - overall
+    "mean_d1", "mean_d2", "mean_d3", "mean_d4", "mean_d5",
+    # Detector means - wolves vs non-wolves (RQ2)
+    "mean_d1_wolves", "mean_d1_nonwolves",
+    "mean_d2_wolves", "mean_d2_nonwolves",
+    "mean_d3_wolves", "mean_d3_nonwolves",
+    "mean_d4_wolves", "mean_d4_nonwolves",
+    "mean_d5_wolves", "mean_d5_nonwolves",]
+)
 
 _AGENT_FACTORIES = {
-    "random":     lambda pid, seed: RandomAgent(pid, seed=seed),
-    "heuristic":  lambda pid, seed: HeuristicAgent(pid, seed=seed),
-    "bayesian":   lambda pid, seed: BayesianAgent(pid, seed=seed),
-    "mcts":       lambda pid, seed: MCTSAgent(pid, seed=seed),
+    "random":      lambda pid, seed: RandomAgent(pid, seed=seed),
+    "heuristic":   lambda pid, seed: HeuristicAgent(pid, seed=seed),
+    "bayesian":    lambda pid, seed: BayesianAgent(pid, seed=seed),
+    "mcts":        lambda pid, seed: MCTSAgent(pid, seed=seed),
     "logic_based": lambda pid, seed: LogicAgent(pid, seed=seed),
 }
 
@@ -95,6 +117,26 @@ _AGENT_DISPLAY_NAMES = {
     "heuristic_with_suspicion": "Heuristic+Suspicion",
     "mcts_with_suspicion":      "MCTS+Suspicion",
 }
+
+
+class _Tee:
+    """Mirrors stdout writes to a log file simultaneously."""
+    def __init__(self, log_path: str):
+        self._stdout = sys.stdout
+        self._log    = open(log_path, 'w', encoding='utf-8', buffering=1)
+        sys.stdout   = self
+
+    def write(self, text):
+        self._stdout.write(text)
+        self._log.write(text)
+
+    def flush(self):
+        self._stdout.flush()
+        self._log.flush()
+
+    def close(self):
+        sys.stdout = self._stdout
+        self._log.close()
 
 
 class GameRunner:
@@ -118,25 +160,28 @@ class GameRunner:
     """
 
     def __init__(self, config: dict):
-        self._config = config
-        self._rng    = random.Random(config.get("seed"))
+        self._config        = config
+        self._rng           = random.Random(config.get("seed"))
         self._xlsx_exporter = XlsxExporter()
         self._evol_logger   = EvolutionLogger()
         self._learner: Optional[OnlineLearner] = None
 
-    # ------------------------------------------------------------------ #
-    #  Public                                                              #
-    # ------------------------------------------------------------------ #
+    # --- Public -----------------------------------------------------------
 
     def run_games(self, n_games: int) -> tuple:
-        """
-        Run n_games games.
-        Returns (list[game_record], summary_rows_list).
-        """
+        """Run n_games games. Returns (list[game_record], summary_rows_list)."""
         output_dir = self._config.get("output_dir", "./results")
         os.makedirs(output_dir, exist_ok=True)
 
-        # Print agent composition before starting
+        import datetime
+        log_name = "run_" + datetime.datetime.now().strftime("%Y%m%d_%H%M%S") + ".log"
+        tee = _Tee(os.path.join(output_dir, log_name))
+        try:
+            return self._run_games_inner(n_games, output_dir)
+        finally:
+            tee.close()
+
+    def _run_games_inner(self, n_games: int, output_dir: str) -> tuple:
         n_players = self._config.get("players", 8)
         susp_type = self._config.get("suspicion_agent_type", "bayesian")
         comp = self._config.get("agent_composition") or \
@@ -147,7 +192,6 @@ class GameRunner:
         )
         print(f"Agent composition:  {comp_str}")
 
-        # Initialise online learner if any suspicion agents are present
         has_suspicion = (
             susp_type != "none"
             or any("_with_suspicion" in k for k in comp)
@@ -160,8 +204,7 @@ class GameRunner:
 
         summary_rows: list = []
         records:      list = []
-
-        print_every = max(1, n_games // 100)  # ~1% intervals
+        print_every = max(1, n_games // 100)
 
         for game_id in range(n_games):
             record, summary_row = self._run_one(game_id)
@@ -178,16 +221,15 @@ class GameRunner:
 
         self._write_summary(summary_rows, output_dir)
         self._write_config_echo(output_dir)
+        self._print_aggregate(summary_rows, output_dir)
 
         if self._learner and self._learner.history:
             hist_path = self._learner.write_history(output_dir)
-            print(f"Weight history saved -> {hist_path}")
+            print(f"  Weight history -> {hist_path}")
 
         return records, summary_rows
 
-    # ------------------------------------------------------------------ #
-    #  Single-game runner                                                  #
-    # ------------------------------------------------------------------ #
+    # --- Single-game runner -----------------------------------------------
 
     def _run_one(self, game_id: int) -> tuple:
         n_players  = self._config["players"]
@@ -195,14 +237,12 @@ class GameRunner:
         seed       = self._rng.randint(0, 2**31) if self._config.get("seed") is None \
                      else self._config["seed"] + game_id
 
-        # 1. Build agents and collect all suspicion slots
         agents_list, susp_pids, no_wolf_pids, pid_to_type = self._build_agents(
             n_players, game_id, seed
         )
         player_ids  = [a.agent_id for a in agents_list]
         agents_dict = {a.agent_id: a for a in agents_list}
 
-        # 2. Assign roles (no-wolf constraint: suspicion agents + logic agents)
         roles = assign_roles(
             player_ids=player_ids,
             n_players=n_players,
@@ -210,18 +250,15 @@ class GameRunner:
             suspicion_player_ids=no_wolf_pids,
         )
 
-        # 3. Give each enhanced agent the ground-truth role map (for trace logging)
         for pid in susp_pids:
             enh = agents_dict.get(pid)
             if isinstance(enh, EnhancedAgent):
                 enh.set_true_roles(roles)
 
-        # 3b. Assign wolf talk strategies (if configured)
         wolf_cfg = self._config.get("wolf_strategies", {})
         if wolf_cfg:
             self._assign_wolf_strategies(agents_dict, roles, seed, wolf_cfg)
 
-        # 4. Run the game
         game = WerewolfGame(
             agents=agents_dict,
             roles=roles,
@@ -233,11 +270,9 @@ class GameRunner:
         )
         record = game.run()
 
-        # 5. Logging
         game_dir = os.path.join(output_dir, f"game_{game_id:04d}")
         os.makedirs(game_dir, exist_ok=True)
 
-        # Gather per-agent suspicion data; write one evolution CSV per agent
         susp_agents_data: list = []
         all_evo_rows:     list = []
         for pid in susp_pids:
@@ -257,7 +292,6 @@ class GameRunner:
                     output_dir=output_dir,
                 )
 
-        # Online learning: update suspicion weights from this game's data
         if self._learner is not None and all_evo_rows:
             new_weights = self._learner.update(game_id, all_evo_rows)
             self._config["suspicion_weights"] = new_weights
@@ -269,31 +303,23 @@ class GameRunner:
             output_dir=output_dir,
         )
 
-        # 7. Per-game JSON summary
         first_susp = susp_pids[0] if susp_pids else None
         self._write_game_summary(record, roles, first_susp, game_dir)
 
-        # 8. Build summary row
-        summary_row = self._build_summary_row(record, roles, first_susp, pid_to_type)
+        summary_row = self._build_summary_row(
+            record, roles, first_susp, pid_to_type,
+            all_evo_rows=all_evo_rows, susp_pids=susp_pids,
+        )
         return record, summary_row
 
-    # ------------------------------------------------------------------ #
-    #  Agent construction                                                  #
-    # ------------------------------------------------------------------ #
+    # --- Agent construction -----------------------------------------------
 
     def _build_agents(self, n_players: int, game_id: int, seed: int) -> tuple:
-        """
-        Build the agent list from composition config.
-        Returns (agents_list, susp_pids: list[int], pid_to_type: dict).
-        Multiple *_with_suspicion entries are all collected.
-        """
         susp_type   = self._config.get("suspicion_agent_type", "bayesian")
         composition = self._config.get("agent_composition", None)
-
         if composition is None:
             composition = self._default_composition(n_players, susp_type)
 
-        # Validate total
         total = sum(composition.values())
         if total != n_players:
             raise ValueError(
@@ -301,10 +327,10 @@ class GameRunner:
                 f"Composition: {composition}"
             )
 
-        agents:        list = []
-        susp_pids:     list = []   # suspicion-enhanced only (game notifications)
-        no_wolf_pids:  list = []   # suspicion + logic (role-assignment constraint)
-        pid_to_type:   dict = {}
+        agents:       list = []
+        susp_pids:    list = []
+        no_wolf_pids: list = []
+        pid_to_type:  dict = {}
         pid = 1
 
         susp_keys = {
@@ -331,16 +357,15 @@ class GameRunner:
                     susp_pids.append(pid)
                     no_wolf_pids.append(pid)
                 elif agent_type == "none":
-                    pass  # skip
+                    pid += 1
+                    continue
                 elif agent_type in ("random", "heuristic", "bayesian",
-                                     "mcts", "logic_based"):
+                                    "mcts", "logic_based"):
                     factory = _AGENT_FACTORIES[agent_type]
                     agent   = factory(pid, agent_seed)
                     if agent_type == "mcts":
-                        agent.n_simulations = self._config.get(
-                            "mcts_simulations", 500)
-                        agent.max_depth     = self._config.get(
-                            "mcts_depth", 5)
+                        agent.n_simulations = self._config.get("mcts_simulations", 500)
+                        agent.max_depth     = self._config.get("mcts_depth", 5)
                     if agent_type == "logic_based":
                         no_wolf_pids.append(pid)
                 else:
@@ -350,7 +375,6 @@ class GameRunner:
                 agents.append(agent)
                 pid += 1
 
-        # If suspicion requested but none in composition, auto-insert one
         if susp_type != "none" and not susp_pids and len(agents) < n_players:
             agent_seed   = seed + pid * 1000 if seed is not None else None
             base_factory = _AGENT_FACTORIES.get(susp_type, _AGENT_FACTORIES["bayesian"])
@@ -361,30 +385,18 @@ class GameRunner:
             dec_w = {k: susp_weights[k] for k in ("w1","w2")
                      if k in susp_weights} or None
             agent = EnhancedAgent(base, det_w, dec_w)
-            auto_type = f"{susp_type}_with_suspicion"
             susp_pids.append(pid)
             no_wolf_pids.append(pid)
-            pid_to_type[pid] = auto_type
+            pid_to_type[pid] = f"{susp_type}_with_suspicion"
             agents.append(agent)
 
         return agents, susp_pids, no_wolf_pids, pid_to_type
 
-    def _assign_wolf_strategies(
-        self,
-        agents: dict,
-        roles: dict,
-        seed: int,
-        wolf_cfg: dict,
-    ) -> None:
-        """
-        For each wolf agent, randomly pick a talk strategy based on configured
-        probabilities. Strategies are mutually exclusive per agent.
-        """
+    def _assign_wolf_strategies(self, agents, roles, seed, wolf_cfg):
         from werewolf.const import Role as WRole
-        rng = random.Random(seed + 77777)  # deterministic but independent from game rng
-        p_bus     = wolf_cfg.get("bus_driver_probability", 0.2)
-        p_false   = wolf_cfg.get("false_claimer_probability", 0.5)
-
+        rng     = random.Random(seed + 77777)
+        p_bus   = wolf_cfg.get("bus_driver_probability", 0.2)
+        p_false = wolf_cfg.get("false_claimer_probability", 0.5)
         for pid, agent in agents.items():
             if roles.get(pid) != WRole.WEREWOLF:
                 continue
@@ -393,16 +405,11 @@ class GameRunner:
                 agent.set_wolf_strategy("bus_driver")
             elif r < p_bus + p_false:
                 agent.set_wolf_strategy("false_claimer")
-            # else: no special strategy — default talk behaviour
 
     def _default_composition(self, n_players: int, susp_type: str) -> dict:
-        """
-        If no composition given, build a balanced mix.
-        Always includes one suspicion agent if susp_type != 'none'.
-        """
         if susp_type != "none":
-            n_other = n_players - 1
-            n_random   = max(1, n_other // 3)
+            n_other     = n_players - 1
+            n_random    = max(1, n_other // 3)
             n_heuristic = max(1, n_other // 3)
             n_bayesian  = n_other - n_random - n_heuristic
             return {
@@ -412,115 +419,254 @@ class GameRunner:
                 f"{susp_type}_with_suspicion": 1,
             }
         else:
-            n_random   = max(1, n_players // 3)
+            n_random    = max(1, n_players // 3)
             n_heuristic = max(1, n_players // 3)
             n_bayesian  = n_players - n_random - n_heuristic
-            return {
-                "random":    n_random,
-                "heuristic": n_heuristic,
-                "bayesian":  n_bayesian,
-            }
+            return {"random": n_random, "heuristic": n_heuristic, "bayesian": n_bayesian}
 
-    # ------------------------------------------------------------------ #
-    #  Output helpers                                                      #
-    # ------------------------------------------------------------------ #
+    # --- Summary row builder ----------------------------------------------
 
-    def _build_summary_row(
-        self,
-        record:      dict,
-        roles:       dict,
-        susp_pid:    Optional[int],
-        pid_to_type: dict,
-    ) -> dict:
-        winner = record["winner"]
+    def _build_summary_row(self, record, roles, susp_pid, pid_to_type,
+                           all_evo_rows=None, susp_pids=None):
+        from werewolf.const import ROLE_TO_TEAM
+        winner       = record["winner"]
+        all_evo_rows = all_evo_rows or []
+        susp_pids    = susp_pids    or []
 
-        # Overall vote counters + per-agent-type buckets
-        total_votes        = 0
-        correct_wolf_votes = 0
-        false_accusations  = 0
-        type_total:   dict = {}   # agent_type -> votes cast
-        type_correct: dict = {}   # agent_type -> correct wolf votes
+        # Vote counters
+        total_votes = correct_wolf_votes = false_accusations = 0
+        wolves_targeted: set = set()
+        type_total:  dict = {}
+        type_correct: dict = {}
+
+        wolf_pids    = {pid for pid, role in roles.items() if role == Role.WEREWOLF}
+        total_wolves = len(wolf_pids)
 
         for ev in record["events"]:
-            if ev.get("type") == "vote":
-                total_votes += 1
-                voter       = ev["agent"]
-                target_role = roles.get(ev["target"], Role.VILLAGER)
-                is_wolf     = target_role in (Role.WEREWOLF,)
+            if ev.get("type") != "vote":
+                continue
+            total_votes += 1
+            voter  = ev["agent"]
+            target = ev["target"]
+            is_wolf = (roles.get(target, Role.VILLAGER) == Role.WEREWOLF)
+            atype   = pid_to_type.get(voter, "random")
+            type_total[atype] = type_total.get(atype, 0) + 1
+            if is_wolf:
+                correct_wolf_votes += 1
+                wolves_targeted.add(target)
+                type_correct[atype] = type_correct.get(atype, 0) + 1
+            else:
+                false_accusations += 1
 
-                atype = pid_to_type.get(voter, "random")
-                type_total[atype]   = type_total.get(atype, 0) + 1
-                if is_wolf:
-                    correct_wolf_votes += 1
-                    type_correct[atype] = type_correct.get(atype, 0) + 1
-                else:
-                    false_accusations += 1
+        def _safe_div(a, b):
+            return round(a / b, 4) if b > 0 else None
 
-        susp_survived = None
-        susp_won      = None
-        susp_role     = None
+        wolf_vote_precision   = _safe_div(correct_wolf_votes, total_votes)
+        wolf_vote_recall      = _safe_div(len(wolves_targeted), total_wolves)
+        false_accusation_rate = _safe_div(false_accusations, total_votes)
+
+        # Wolf elimination timing
+        wolves_executed = 0
+        day_first_wolf_executed = None
+        for ev in record["events"]:
+            if ev.get("type") == "execution" and ev.get("role") == "WEREWOLF":
+                wolves_executed += 1
+                if day_first_wolf_executed is None:
+                    day_first_wolf_executed = ev["day"]
+
+        # Suspicion agent fields
+        susp_role = susp_survived = susp_won = None
         if susp_pid is not None:
-            susp_role = roles.get(susp_pid, Role.VILLAGER).value
-            from werewolf.const import ROLE_TO_TEAM
-            susp_team = ROLE_TO_TEAM.get(roles.get(susp_pid, Role.VILLAGER))
+            susp_role     = roles.get(susp_pid, Role.VILLAGER).value
+            susp_team     = ROLE_TO_TEAM.get(roles.get(susp_pid, Role.VILLAGER))
             susp_survived = record["status"].get(susp_pid) == "ALIVE"
             susp_won      = (susp_team == winner)
 
+        n_susp_survived = sum(1 for p in susp_pids
+                              if record["status"].get(p) == "ALIVE")
+        n_susp_won      = sum(1 for p in susp_pids
+                              if ROLE_TO_TEAM.get(roles.get(p)) == winner)
+
+        # Suspicion calibration from evolution rows
+        WOLF_ROLES_SUSP = {"WEREWOLF", "POSSESSED"}
+        final_by_player: dict = {}
+        for row in all_evo_rows:
+            final_by_player[row["target_player"]] = row
+
+        wolf_sigmas = []
+        nonwolf_sigmas = []
+        wolf_combined = []
+        nonwolf_combined = []
+        wolf_d    = {i: [] for i in range(1, 6)}
+        nonwolf_d = {i: [] for i in range(1, 6)}
+
+        for row in final_by_player.values():
+            role_str  = (row.get("target_role") or "").upper()
+            is_w      = role_str in WOLF_ROLES_SUSP
+            sigma     = float(row.get("sigma", 0.5))
+            combined  = float(row.get("combined_score", 0.5))
+            if is_w:
+                wolf_sigmas.append(sigma)
+                wolf_combined.append(combined)
+                for i in range(1, 6):
+                    wolf_d[i].append(float(row.get(f"d{i}", 0.0)))
+            else:
+                nonwolf_sigmas.append(sigma)
+                nonwolf_combined.append(combined)
+                for i in range(1, 6):
+                    nonwolf_d[i].append(float(row.get(f"d{i}", 0.0)))
+
+        def _mean(lst):
+            return round(sum(lst) / len(lst), 4) if lst else None
+
+        mean_sw = _mean(wolf_sigmas)
+        mean_sn = _mean(nonwolf_sigmas)
+        sigma_gap = round(mean_sw - mean_sn, 4) \
+                    if mean_sw is not None and mean_sn is not None else None
+
+        mean_cw = _mean(wolf_combined)
+        mean_cn = _mean(nonwolf_combined)
+        combined_gap = round(mean_cw - mean_cn, 4) \
+                       if mean_cw is not None and mean_cn is not None else None
+
+        all_final = list(final_by_player.values())
+        mean_d = {i: _mean([float(r.get(f"d{i}", 0)) for r in all_final])
+                  for i in range(1, 6)}
+
+        # Assemble
         row = {
-            "game_id":               record["game_id"],
-            "n_players":             record["n_players"],
-            "winner":                winner.value,
-            "n_days":                record["n_days"],
-            "suspicion_agent_id":    f"P{susp_pid}" if susp_pid else "",
-            "suspicion_agent_role":  susp_role or "",
+            "game_id":     record["game_id"],
+            "n_players":   record["n_players"],
+            "winner":      winner.value,
+            "village_win": winner == Team.VILLAGE,
+            "n_days":      record["n_days"],
+            "n_suspicion_agents":       len(susp_pids),
+            "suspicion_agent_id":       f"P{susp_pid}" if susp_pid else "",
+            "suspicion_agent_role":     susp_role or "",
             "suspicion_agent_survived": susp_survived,
             "suspicion_agent_won":      susp_won,
-            "correct_wolf_votes":    correct_wolf_votes,
+            "n_susp_agents_survived":   n_susp_survived,
+            "n_susp_agents_won":        n_susp_won,
             "total_votes":           total_votes,
+            "correct_wolf_votes":    correct_wolf_votes,
             "false_accusations":     false_accusations,
+            "wolf_vote_precision":   wolf_vote_precision,
+            "wolf_vote_recall":      wolf_vote_recall,
+            "false_accusation_rate": false_accusation_rate,
+            "total_wolves":             total_wolves,
+            "wolves_executed":          wolves_executed,
+            "day_first_wolf_executed":  day_first_wolf_executed,
+            "mean_sigma_wolves":        mean_sw,
+            "mean_sigma_nonwolves":     mean_sn,
+            "sigma_gap":                sigma_gap,
+            "mean_combined_wolves":     mean_cw,
+            "mean_combined_nonwolves":  mean_cn,
+            "combined_gap":             combined_gap,
+            "mean_d1": mean_d[1], "mean_d2": mean_d[2], "mean_d3": mean_d[3],
+            "mean_d4": mean_d[4], "mean_d5": mean_d[5],
+            "mean_d1_wolves":    _mean(wolf_d[1]),
+            "mean_d1_nonwolves": _mean(nonwolf_d[1]),
+            "mean_d2_wolves":    _mean(wolf_d[2]),
+            "mean_d2_nonwolves": _mean(nonwolf_d[2]),
+            "mean_d3_wolves":    _mean(wolf_d[3]),
+            "mean_d3_nonwolves": _mean(nonwolf_d[3]),
+            "mean_d4_wolves":    _mean(wolf_d[4]),
+            "mean_d4_nonwolves": _mean(nonwolf_d[4]),
+            "mean_d5_wolves":    _mean(wolf_d[5]),
+            "mean_d5_nonwolves": _mean(nonwolf_d[5]),
         }
 
-        # Per-type correct vote percentage (None when that type cast no votes)
         for atype, short in _TYPE_SHORT.items():
             n = type_total.get(atype, 0)
             c = type_correct.get(atype, 0)
+            row[f"{short}_votes"]       = n
             row[f"{short}_correct_pct"] = round(c / n, 4) if n > 0 else None
 
         return row
 
+    # --- Aggregate summary ------------------------------------------------
+
+    def _print_aggregate(self, rows: list, output_dir: str) -> None:
+        n = len(rows)
+        if n == 0:
+            return
+
+        def _avg(field):
+            vals = [r[field] for r in rows if r.get(field) is not None]
+            return sum(vals) / len(vals) if vals else None
+
+        def _pct(field):
+            v = _avg(field)
+            return f"{v*100:.1f}%" if v is not None else "n/a"
+
+        def _fmt(field, decimals=3):
+            v = _avg(field)
+            return f"{v:.{decimals}f}" if v is not None else "n/a"
+
+        village_wins = sum(1 for r in rows if r.get("village_win") == 1)
+        wolf_wins    = n - village_wins
+        total_votes  = sum(r.get("total_votes", 0) or 0 for r in rows)
+        total_days   = sum(r.get("n_days", 0) or 0 for r in rows)
+
+        has_susp = any(r.get("n_suspicion_agents", 0) for r in rows)
+
+        print()
+        print("=" * 50)
+        print(f"  Run complete : {n} games")
+        print(f"  Output dir  : {output_dir}")
+        print("-" * 50)
+        print(f"  Village wins : {village_wins}/{n}  ({village_wins/n*100:.1f}%)")
+        print(f"  Wolf wins    : {wolf_wins}/{n}  ({wolf_wins/n*100:.1f}%)")
+        print(f"  Avg days     : {total_days/n:.2f}")
+        print("-" * 50)
+        print(f"  Total votes        : {total_votes}")
+        print(f"  Wolf vote prec.    : {_fmt('wolf_vote_precision', 3)}")
+        print(f"  Wolf vote recall   : {_fmt('wolf_vote_recall', 3)}")
+        print(f"  False accuse rate  : {_fmt('false_accusation_rate', 3)}")
+        wolves_exec = [r['wolves_executed'] for r in rows if r.get('wolves_executed') is not None]
+        avg_we = sum(wolves_exec)/len(wolves_exec) if wolves_exec else None
+        print(f"  Avg wolves exec'd  : {avg_we:.2f}" if avg_we is not None else "  Avg wolves exec'd  : n/a")
+        if has_susp:
+            print("-" * 50)
+            print(f"  Sigma gap          : {_fmt('sigma_gap', 4)}")
+            print(f"  Combined score gap : {_fmt('combined_gap', 4)}")
+            susp_won = sum(r.get('n_susp_agents_won', 0) or 0 for r in rows)
+            susp_total = sum(r.get('n_suspicion_agents', 0) or 0 for r in rows)
+            if susp_total > 0:
+                print(f"  Susp-agent wins    : {susp_won}/{susp_total}  ({susp_won/susp_total*100:.1f}%)")
+        print("=" * 50)
+        print()
+
+    # --- Output helpers ---------------------------------------------------
+
     def _write_summary(self, rows: list, output_dir: str) -> None:
-        path = os.path.join(output_dir, "summary.csv")
-        with open(path, "w", newline="", encoding="utf-8") as f:
-            writer = csv.DictWriter(
-                f, fieldnames=_SUMMARY_FIELDS, extrasaction="ignore"
-            )
+        path = os.path.join(output_dir, 'summary.csv')
+        with open(path, 'w', newline='', encoding='utf-8') as f:
+            writer = csv.DictWriter(f, fieldnames=_SUMMARY_FIELDS,
+                                    extrasaction='ignore')
             writer.writeheader()
             writer.writerows(rows)
 
     def _write_config_echo(self, output_dir: str) -> None:
-        path = os.path.join(output_dir, "config_used.json")
-        serialisable = {
-            k: v for k, v in self._config.items()
-            if isinstance(v, (int, float, str, bool, list, dict, type(None)))
-        }
-        with open(path, "w", encoding="utf-8") as f:
+        path = os.path.join(output_dir, 'config_used.json')
+        serialisable = {k: v for k, v in self._config.items()
+                        if isinstance(v, (int, float, str, bool, list,
+                                         dict, type(None)))}
+        with open(path, 'w', encoding='utf-8') as f:
             json.dump(serialisable, f, indent=2)
 
-    def _write_game_summary(
-        self, record: dict, roles: dict,
-        susp_pid: Optional[int], game_dir: str
-    ) -> None:
+    def _write_game_summary(self, record, roles, susp_pid, game_dir):
         summary = {
-            "game_id":   record["game_id"],
-            "n_players": record["n_players"],
-            "winner":    record["winner"].value,
-            "n_days":    record["n_days"],
-            "roles":     record["roles"],
-            "agents":    record["agent_names"],
-            "final_status": record["status"],
-            "suspicion_agent_id":   susp_pid,
-            "suspicion_agent_role": record.get("suspicion_agent_role"),
+            'game_id':              record['game_id'],
+            'n_players':            record['n_players'],
+            'winner':               record['winner'].value,
+            'n_days':               record['n_days'],
+            'roles':                record['roles'],
+            'agents':               record['agent_names'],
+            'final_status':         record['status'],
+            'suspicion_agent_id':   susp_pid,
+            'suspicion_agent_role': record.get('suspicion_agent_role'),
         }
-        path = os.path.join(game_dir, "game_summary.json")
-        with open(path, "w", encoding="utf-8") as f:
+        path = os.path.join(game_dir, 'game_summary.json')
+        with open(path, 'w', encoding='utf-8') as f:
             json.dump(summary, f, indent=2)
