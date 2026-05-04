@@ -102,32 +102,32 @@ Agent composition:  6x Heuristic  |  2x Heuristic+Suspicion
 
 ====================================================
   Run complete : 10000 games
-  Output dir  : ./results/heuristic_2sus_seed123_2026-05-04_19-30-37
+  Output dir  : ./results/heuristic_2sus_seed456_2026-05-04_19-59-43
 ----------------------------------------------------
-  Village wins : 2216/10000  (22.2%)
-  Wolf wins    : 7784/10000  (77.8%)
+  Village wins : 2233/10000  (22.3%)
+  Wolf wins    : 7767/10000  (77.7%)
   Avg days     : 2.47
 ----------------------------------------------------
-  Total votes       : 158876
+  Total votes       : 158864
   Wolf vote prec.   : 0.287
-  Wolf vote recall  : 0.621
+  Wolf vote recall  : 0.622
   False accuse rate : 0.713
-  Avg wolves exec'd : 0.75
+  Avg wolves exec'd : 0.76
 ----------------------------------------------------
   Win rate by agent type + role:
-    Susp     | Villager  : 21.9%  (n=6644)
-    Susp     | Seer      : 22.8%  (n=1700)
-    Susp     | Possessed : 77.5%  (n=1656)
+    Susp     | Villager  : 22.1%  (n=6632)
+    Susp     | Seer      : 22.9%  (n=1691)
+    Susp     | Possessed : 77.5%  (n=1677)
     ----------
-    Non-susp | Villager  : 22.2%
-    Non-susp | Seer      : 22.2%
-    Non-susp | Werewolf  : 77.8%
-    Non-susp | Possessed : 77.8%
+    Non-susp | Villager  : 22.3%
+    Non-susp | Seer      : 22.3%
+    Non-susp | Werewolf  : 77.7%
+    Non-susp | Possessed : 77.7%
 ----------------------------------------------------
-  Sigma gap          : 0.0216
-  Combined score gap : 0.0256
-  Susp-agent wins    : 6313/20000  (31.6%)
+  Sigma gap          : 0.0214
+  Combined score gap : 0.0253
+  Susp-agent wins    : 6347/20000  (31.7%)
   Non-susp wins      : 28119/60000  (46.9%)
 ====================================================
 
-  Weight history -> ./results/heuristic_2sus_seed123_2026-05-04_19-30-37/weight_history.csv
+  Weight history -> ./results/heuristic_2sus_seed456_2026-05-04_19-59-43/weight_history.csv
