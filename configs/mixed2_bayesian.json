@@ -1,0 +1,27 @@
+{
+  "games": 10000,
+  "players": 8,
+  "suspicion_agent_type": "bayesian",
+  "agent_composition": {
+    "bayesian": 6,
+    "bayesian_with_suspicion": 2
+  },
+  "suspicion_weights": {
+    "a1": 0.30,
+    "a2": 0.15,
+    "a3": 0.20,
+    "a4": 0.20,
+    "a5": 0.15,
+    "w1": 0.6,
+    "w2": 0.4
+  },
+  "mcts_simulations": 500,
+  "mcts_depth": 5,
+  "output_dir": "./results",
+  "max_talk_rounds": 5,
+  "verbose": false,
+  "wolf_strategies": {
+    "bus_driver_probability": 0.2,
+    "false_claimer_probability": 0.5
+  }
+}
