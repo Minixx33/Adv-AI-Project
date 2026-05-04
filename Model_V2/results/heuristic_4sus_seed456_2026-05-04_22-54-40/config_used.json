@@ -1,0 +1,30 @@
+{
+  "games": 10000,
+  "players": 8,
+  "suspicion_agent_type": "heuristic",
+  "output_dir": "./results/heuristic_4sus_seed456_2026-05-04_22-54-40",
+  "seed": 456,
+  "verbose": false,
+  "grid_search": false,
+  "max_talk_rounds": 5,
+  "suspicion_weights": {
+    "a1": 0.30081426860341787,
+    "a2": 0.1487812969352522,
+    "a3": 0.19937957070862922,
+    "a4": 0.20052430993821035,
+    "a5": 0.1505005538144902,
+    "w1": 0.599322,
+    "w2": 0.400678
+  },
+  "mcts_simulations": 500,
+  "mcts_depth": 5,
+  "agent_composition": {
+    "heuristic": 4,
+    "heuristic_with_suspicion": 4
+  },
+  "wolf_strategies": {
+    "bus_driver_probability": 0.2,
+    "false_claimer_probability": 0.5
+  },
+  "run_name": "heuristic_4sus_seed456"
+}
