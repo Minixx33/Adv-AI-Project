@@ -41,7 +41,7 @@ for AGENT in "${AGENTS[@]}"; do
 
     for SEED in "${SEEDS[@]}"; do
         RUN_NUM=$(( RUN_NUM + 1 ))
-        RUN_NAME="${AGENT}_mixed2_seed${SEED}"
+        RUN_NAME="${AGENT}_2sus_seed${SEED}"
 
         echo "----------------------------------------"
         echo "  Run ${RUN_NUM}/${TOTAL_RUNS}: ${RUN_NAME}"
