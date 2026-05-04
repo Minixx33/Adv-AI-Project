@@ -161,12 +161,19 @@ class GameRunner:
         summary_rows: list = []
         records:      list = []
 
+        print_every = max(1, n_games // 100)  # ~1% intervals
+
         for game_id in range(n_games):
             record, summary_row = self._run_one(game_id)
             records.append(record)
             summary_rows.append(summary_row)
 
-            if self._config.get("verbose") and game_id % 10 == 0:
+            completed = game_id + 1
+            if completed % print_every == 0 or completed == n_games:
+                pct = completed / n_games * 100
+                print(f"  {completed}/{n_games} games completed ({pct:.0f}%)",
+                      flush=True)
+            elif self._config.get("verbose") and game_id % 10 == 0:
                 print(f"  Completed game {game_id}/{n_games}")
 
         self._write_summary(summary_rows, output_dir)
