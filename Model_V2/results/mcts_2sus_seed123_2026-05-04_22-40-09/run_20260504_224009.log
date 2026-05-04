@@ -1,4 +1,6 @@
 Agent composition:  6x MCTS  |  2x MCTS+Suspicion
+Parallel workers   : 4
+Total games        : 10000
   100/10000 games completed (1%)
   200/10000 games completed (2%)
   300/10000 games completed (3%)
@@ -102,32 +104,31 @@ Agent composition:  6x MCTS  |  2x MCTS+Suspicion
 
 ====================================================
   Run complete : 10000 games
-  Output dir  : ./results/mcts_2sus_seed42_2026-05-04_20-24-00
+  Output dir  : ./results/mcts_2sus_seed123_2026-05-04_22-40-09
 ----------------------------------------------------
-  Village wins : 1665/10000  (16.7%)
-  Wolf wins    : 8335/10000  (83.4%)
-  Avg days     : 2.40
+  Village wins : 1309/10000  (13.1%)
+  Wolf wins    : 8691/10000  (86.9%)
+  Avg days     : 2.35
 ----------------------------------------------------
-  Total votes       : 156016
-  Wolf vote prec.   : 0.248
-  Wolf vote recall  : 0.892
-  False accuse rate : 0.752
-  Avg wolves exec'd : 0.61
+  Total votes       : 154176
+  Wolf vote prec.   : 0.234
+  Wolf vote recall  : 0.877
+  False accuse rate : 0.766
+  Avg wolves exec'd : 0.52
 ----------------------------------------------------
   Win rate by agent type + role:
-    Susp     | Villager  : 16.8%  (n=6647)
-    Susp     | Seer      : 16.0%  (n=1702)
-    Susp     | Possessed : 83.2%  (n=1651)
+    Susp     | Villager  : 13.3%  (n=6644)
+    Susp     | Seer      : 12.2%  (n=1700)
+    Susp     | Possessed : 86.9%  (n=1656)
     ----------
-    Non-susp | Villager  : 16.7%
-    Non-susp | Seer      : 16.7%
-    Non-susp | Werewolf  : 83.4%
-    Non-susp | Possessed : 83.4%
+    Non-susp | Villager  : 13.1%
+    Non-susp | Seer      : 13.1%
+    Non-susp | Werewolf  : 86.9%
+    Non-susp | Possessed : 86.9%
 ----------------------------------------------------
-  Sigma gap          : 0.0297
-  Combined score gap : 0.0278
-  Susp-agent wins    : 5539/20000  (27.7%)
-  Non-susp wins      : 27791/60000  (46.3%)
+  Sigma gap          : 0.0195
+  Combined score gap : 0.0129
+  Susp-agent wins    : 5055/20000  (25.3%)
+  Non-susp wins      : 27563/60000  (45.9%)
 ====================================================
 
-  Weight history -> ./results/mcts_2sus_seed42_2026-05-04_20-24-00/weight_history.csv
