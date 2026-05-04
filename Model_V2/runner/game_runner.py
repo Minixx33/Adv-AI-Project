@@ -595,10 +595,6 @@ class GameRunner:
             vals = [r[field] for r in rows if r.get(field) is not None]
             return sum(vals) / len(vals) if vals else None
 
-        def _pct(field):
-            v = _avg(field)
-            return f"{v*100:.1f}%" if v is not None else "n/a"
-
         def _fmt(field, decimals=3):
             v = _avg(field)
             return f"{v:.{decimals}f}" if v is not None else "n/a"
@@ -607,66 +603,108 @@ class GameRunner:
         wolf_wins    = n - village_wins
         total_votes  = sum(r.get("total_votes", 0) or 0 for r in rows)
         total_days   = sum(r.get("n_days", 0) or 0 for r in rows)
-
-        has_susp = any(r.get("n_suspicion_agents", 0) for r in rows)
+        has_susp     = any(r.get("n_suspicion_agents", 0) for r in rows)
 
         print()
-        print("=" * 50)
+        print("=" * 52)
         print(f"  Run complete : {n} games")
         print(f"  Output dir  : {output_dir}")
-        print("-" * 50)
+        print("-" * 52)
         print(f"  Village wins : {village_wins}/{n}  ({village_wins/n*100:.1f}%)")
         print(f"  Wolf wins    : {wolf_wins}/{n}  ({wolf_wins/n*100:.1f}%)")
         print(f"  Avg days     : {total_days/n:.2f}")
-        print("-" * 50)
-        print(f"  Total votes        : {total_votes}")
-        print(f"  Wolf vote prec.    : {_fmt('wolf_vote_precision', 3)}")
-        print(f"  Wolf vote recall   : {_fmt('wolf_vote_recall', 3)}")
-        print(f"  False accuse rate  : {_fmt('false_accusation_rate', 3)}")
-        wolves_exec = [r['wolves_executed'] for r in rows if r.get('wolves_executed') is not None]
-        avg_we = sum(wolves_exec)/len(wolves_exec) if wolves_exec else None
-        print(f"  Avg wolves exec'd  : {avg_we:.2f}" if avg_we is not None else "  Avg wolves exec'd  : n/a")
+        print("-" * 52)
+        print(f"  Total votes       : {total_votes}")
+        print(f"  Wolf vote prec.   : {_fmt('wolf_vote_precision', 3)}")
+        print(f"  Wolf vote recall  : {_fmt('wolf_vote_recall', 3)}")
+        print(f"  False accuse rate : {_fmt('false_accusation_rate', 3)}")
+        wolves_exec = [r["wolves_executed"] for r in rows if r.get("wolves_executed") is not None]
+        avg_we = sum(wolves_exec) / len(wolves_exec) if wolves_exec else None
+        print(f"  Avg wolves exec'd : {avg_we:.2f}" if avg_we is not None else "  Avg wolves exec'd : n/a")
         if has_susp:
-            print("-" * 50)
+            print("-" * 52)
+            # --- Suspicion agent win rate by role ---
+            # Group games by what role the suspicion agent was assigned
+            from collections import defaultdict
+            susp_role_counts = defaultdict(int)
+            susp_role_wins   = defaultdict(int)
+            for r in rows:
+                role = r.get("suspicion_agent_role")
+                won  = r.get("suspicion_agent_won")
+                if role is not None and won is not None:
+                    susp_role_counts[role] += 1
+                    if won:
+                        susp_role_wins[role] += 1
+            # Non-susp win rate derived from team win rate (role -> team is fixed)
+            vw = village_wins / n * 100
+            ww = wolf_wins    / n * 100
+            nonsusp_roles = [
+                ("Villager",  vw),
+                ("Seer",      vw),
+                ("Werewolf",  ww),
+                ("Possessed", ww),
+            ]
+            print("  Win rate by agent type + role:")
+            role_order = ["VILLAGER", "SEER", "POSSESSED"]
+            for role in role_order:
+                cnt = susp_role_counts.get(role, 0)
+                if cnt == 0:
+                    continue
+                wins = susp_role_wins.get(role, 0)
+                pct  = wins / cnt * 100
+                label = role.capitalize()
+                print(f"    Susp     | {label:<10}: {pct:.1f}%  (n={cnt})")
+            print(f"    ----------")
+            for label, pct in nonsusp_roles:
+                print(f"    Non-susp | {label:<10}: {pct:.1f}%")
+            print("-" * 52)
             print(f"  Sigma gap          : {_fmt('sigma_gap', 4)}")
             print(f"  Combined score gap : {_fmt('combined_gap', 4)}")
-            susp_won = sum(r.get('n_susp_agents_won', 0) or 0 for r in rows)
-            susp_total = sum(r.get('n_suspicion_agents', 0) or 0 for r in rows)
+            susp_won      = sum(r.get("n_susp_agents_won", 0) or 0 for r in rows)
+            susp_total    = sum(r.get("n_suspicion_agents", 0) or 0 for r in rows)
+            total_winners = sum(5 if r.get("village_win") == 1 else 3 for r in rows)
+            nonsusp_won   = total_winners - susp_won
+            nonsusp_total = sum(
+                (r.get("n_players", 8) - (r.get("n_suspicion_agents", 0) or 0))
+                for r in rows
+            )
             if susp_total > 0:
                 print(f"  Susp-agent wins    : {susp_won}/{susp_total}  ({susp_won/susp_total*100:.1f}%)")
-        print("=" * 50)
+            if nonsusp_total > 0:
+                print(f"  Non-susp wins      : {nonsusp_won}/{nonsusp_total}  ({nonsusp_won/nonsusp_total*100:.1f}%)")
+        print("=" * 52)
         print()
 
     # --- Output helpers ---------------------------------------------------
 
     def _write_summary(self, rows: list, output_dir: str) -> None:
-        path = os.path.join(output_dir, 'summary.csv')
-        with open(path, 'w', newline='', encoding='utf-8') as f:
+        path = os.path.join(output_dir, "summary.csv")
+        with open(path, "w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=_SUMMARY_FIELDS,
-                                    extrasaction='ignore')
+                                    extrasaction="ignore")
             writer.writeheader()
             writer.writerows(rows)
 
     def _write_config_echo(self, output_dir: str) -> None:
-        path = os.path.join(output_dir, 'config_used.json')
+        path = os.path.join(output_dir, "config_used.json")
         serialisable = {k: v for k, v in self._config.items()
                         if isinstance(v, (int, float, str, bool, list,
                                          dict, type(None)))}
-        with open(path, 'w', encoding='utf-8') as f:
+        with open(path, "w", encoding="utf-8") as f:
             json.dump(serialisable, f, indent=2)
 
     def _write_game_summary(self, record, roles, susp_pid, game_dir):
         summary = {
-            'game_id':              record['game_id'],
-            'n_players':            record['n_players'],
-            'winner':               record['winner'].value,
-            'n_days':               record['n_days'],
-            'roles':                record['roles'],
-            'agents':               record['agent_names'],
-            'final_status':         record['status'],
-            'suspicion_agent_id':   susp_pid,
-            'suspicion_agent_role': record.get('suspicion_agent_role'),
+            "game_id":              record["game_id"],
+            "n_players":            record["n_players"],
+            "winner":               record["winner"].value,
+            "n_days":               record["n_days"],
+            "roles":                record["roles"],
+            "agents":               record["agent_names"],
+            "final_status":         record["status"],
+            "suspicion_agent_id":   susp_pid,
+            "suspicion_agent_role": record.get("suspicion_agent_role"),
         }
-        path = os.path.join(game_dir, 'game_summary.json')
-        with open(path, 'w', encoding='utf-8') as f:
+        path = os.path.join(game_dir, "game_summary.json")
+        with open(path, "w", encoding="utf-8") as f:
             json.dump(summary, f, indent=2)
