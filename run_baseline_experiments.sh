@@ -5,7 +5,6 @@
 # All 8 players use the same base agent with no suspicion module.
 #
 # Total: 15 runs x 10,000 games = 150,000 games
-# Estimated time: ~35-40 hrs on a standard laptop (runs sequentially)
 #
 # Usage (from WSL, anywhere):
 #   bash /mnt/c/Users/yasmi/OneDrive/Desktop/Github/Adv-AI-Project/run_baseline_experiments.sh
@@ -48,12 +47,7 @@ for AGENT in "${AGENTS[@]}"; do
         echo "  Config: ${CONFIG}  |  Seed: ${SEED}"
         echo "----------------------------------------"
 
-        $PYTHON run_game.py \
-            --config "$CONFIG" \
-            --seed "$SEED" \
-            --run-name "$RUN_NAME" \
-            --games 10000 \
-            --players 8
+        $PYTHON run_game.py             --config "$CONFIG"             --seed "$SEED"             --run-name "$RUN_NAME"             --games 10000             --players 8
 
         echo "  Done: ${RUN_NAME}"
         echo ""

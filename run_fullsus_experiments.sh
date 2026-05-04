@@ -2,16 +2,12 @@
 # run_fullsus_experiments.sh
 #
 # Runs the full-suspicion experiment (all 8 players use suspicion module).
-# This is the upper-bound benchmark for the suspicion module.
-# Compatible agent types only: bayesian, heuristic, mcts.
+# Upper-bound benchmark. Compatible agents: bayesian, heuristic, mcts.
 #
 # Total: 9 runs x 10,000 games = 90,000 games
 #
 # Usage (from WSL, anywhere):
 #   bash /mnt/c/Users/yasmi/OneDrive/Desktop/Github/Adv-AI-Project/run_fullsus_experiments.sh
-#
-# Output lands in:
-#   Model_V2/results/<agent>_fullsus_seed<N>_<timestamp>/
 
 set -euo pipefail
 
@@ -48,12 +44,7 @@ for AGENT in "${AGENTS[@]}"; do
         echo "  Config: ${CONFIG}  |  Seed: ${SEED}"
         echo "----------------------------------------"
 
-        $PYTHON run_game.py \
-            --config "$CONFIG" \
-            --seed "$SEED" \
-            --run-name "$RUN_NAME" \
-            --games 10000 \
-            --players 8
+        $PYTHON run_game.py             --config "$CONFIG"             --seed "$SEED"             --run-name "$RUN_NAME"             --games 10000             --players 8
 
         echo "  Done: ${RUN_NAME}"
         echo ""

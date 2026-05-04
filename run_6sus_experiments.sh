@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# run_mixed6_experiments.sh
+# run_6sus_experiments.sh
 #
 # Runs the mixed-population experiment (6 suspicion agents, 2 base agents)
 # for all 3 compatible agent types x 3 seeds.
@@ -7,10 +7,7 @@
 # Total: 9 runs x 10,000 games = 90,000 games
 #
 # Usage (from WSL, anywhere):
-#   bash /mnt/c/Users/yasmi/OneDrive/Desktop/Github/Adv-AI-Project/run_mixed6_experiments.sh
-#
-# Output lands in:
-#   Model_V2/results/<agent>_6sus_seed<N>_<timestamp>/
+#   bash /mnt/c/Users/yasmi/OneDrive/Desktop/Github/Adv-AI-Project/run_6sus_experiments.sh
 
 set -euo pipefail
 
@@ -47,12 +44,7 @@ for AGENT in "${AGENTS[@]}"; do
         echo "  Config: ${CONFIG}  |  Seed: ${SEED}"
         echo "----------------------------------------"
 
-        $PYTHON run_game.py \
-            --config "$CONFIG" \
-            --seed "$SEED" \
-            --run-name "$RUN_NAME" \
-            --games 10000 \
-            --players 8
+        $PYTHON run_game.py             --config "$CONFIG"             --seed "$SEED"             --run-name "$RUN_NAME"             --games 10000             --players 8
 
         echo "  Done: ${RUN_NAME}"
         echo ""
