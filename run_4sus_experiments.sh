@@ -11,7 +11,7 @@
 
 set -euo pipefail
 
-PROJECT_DIR="/mnt/c/Users/yasmi/OneDrive/Desktop/Github/Adv-AI-Project"
+PROJECT_DIR="/Users/takyallah/Documents/GitHub/Adv-AI-Project"
 MODEL_DIR="${PROJECT_DIR}/Model_V2"
 PYTHON="python3"
 
