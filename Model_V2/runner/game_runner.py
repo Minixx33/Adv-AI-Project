@@ -119,6 +119,220 @@ _AGENT_DISPLAY_NAMES = {
 }
 
 
+# ---------------------------------------------------------------------------
+# Module-level helpers for multiprocessing.Pool (must be top-level picklable)
+# ---------------------------------------------------------------------------
+
+def _default_composition_fn(n_players: int, susp_type: str, config: dict) -> dict:
+    """Module-level version of GameRunner._default_composition."""
+    if susp_type != "none":
+        n_other     = n_players - 1
+        n_random    = max(1, n_other // 3)
+        n_heuristic = max(1, n_other // 3)
+        n_bayesian  = n_other - n_random - n_heuristic
+        return {
+            "random":    n_random,
+            "heuristic": n_heuristic,
+            "bayesian":  n_bayesian,
+            f"{susp_type}_with_suspicion": 1,
+        }
+    else:
+        n_random    = max(1, n_players // 3)
+        n_heuristic = max(1, n_players // 3)
+        n_bayesian  = n_players - n_random - n_heuristic
+        return {"random": n_random, "heuristic": n_heuristic, "bayesian": n_bayesian}
+
+
+def _run_one_game(args: tuple) -> tuple:
+    """
+    Top-level worker for multiprocessing.Pool.
+    args = (config dict, game_id int)
+    Returns (record, roles, all_evo_rows, first_susp_pid, pid_to_type, susp_pids)
+    """
+    import sys as _sys, os as _os, random as _random, json as _json
+    # Suppress all output in worker — main process handles progress display
+    _devnull   = open(_os.devnull, "w")
+    _prev_stdout = _sys.stdout
+    _sys.stdout = _devnull
+
+    try:
+        config, game_id = args
+        n_players  = config["players"]
+        output_dir = config.get("output_dir", "./results")
+        base_seed  = config.get("seed")
+        seed = (base_seed + game_id) if base_seed is not None \
+               else _random.randint(0, 2**31)
+
+        susp_type   = config.get("suspicion_agent_type", "bayesian")
+        composition = config.get("agent_composition") or \
+                      _default_composition_fn(n_players, susp_type, config)
+
+        total = sum(composition.values())
+        if total != n_players:
+            raise ValueError(
+                f"agent_composition sums to {total}, expected {n_players}."
+            )
+
+        agents:       list = []
+        susp_pids:    list = []
+        no_wolf_pids: list = []
+        pid_to_type:  dict = {}
+        pid = 1
+
+        susp_keys = {
+            "bayesian_with_suspicion", "heuristic_with_suspicion",
+            "mcts_with_suspicion",
+        }
+
+        for agent_type, count in composition.items():
+            for _ in range(count):
+                agent_seed = seed + pid * 1000 if seed is not None else None
+
+                if agent_type in susp_keys:
+                    base_type    = agent_type.replace("_with_suspicion", "")
+                    base_factory = _AGENT_FACTORIES.get(base_type)
+                    if base_factory is None:
+                        raise ValueError(f"Unknown base agent type: {base_type}")
+                    base = base_factory(pid, agent_seed)
+                    susp_weights = config.get("suspicion_weights", {})
+                    det_w = {k: susp_weights[k] for k in ("a1","a2","a3","a4","a5")
+                             if k in susp_weights} or None
+                    dec_w = {k: susp_weights[k] for k in ("w1","w2")
+                             if k in susp_weights} or None
+                    agent = EnhancedAgent(base, det_w, dec_w)
+                    susp_pids.append(pid)
+                    no_wolf_pids.append(pid)
+                elif agent_type == "none":
+                    pid += 1
+                    continue
+                elif agent_type in ("random", "heuristic", "bayesian",
+                                    "mcts", "logic_based"):
+                    factory = _AGENT_FACTORIES[agent_type]
+                    agent   = factory(pid, agent_seed)
+                    if agent_type == "mcts":
+                        agent.n_simulations = config.get("mcts_simulations", 500)
+                        agent.max_depth     = config.get("mcts_depth", 5)
+                    if agent_type == "logic_based":
+                        no_wolf_pids.append(pid)
+                else:
+                    raise ValueError(f"Unknown agent type: '{agent_type}'")
+
+                pid_to_type[pid] = agent_type
+                agents.append(agent)
+                pid += 1
+
+        if susp_type != "none" and not susp_pids and len(agents) < n_players:
+            agent_seed   = seed + pid * 1000 if seed is not None else None
+            base_factory = _AGENT_FACTORIES.get(susp_type, _AGENT_FACTORIES["bayesian"])
+            base = base_factory(pid, agent_seed)
+            susp_weights = config.get("suspicion_weights", {})
+            det_w = {k: susp_weights[k] for k in ("a1","a2","a3","a4","a5")
+                     if k in susp_weights} or None
+            dec_w = {k: susp_weights[k] for k in ("w1","w2")
+                     if k in susp_weights} or None
+            agent = EnhancedAgent(base, det_w, dec_w)
+            susp_pids.append(pid)
+            no_wolf_pids.append(pid)
+            pid_to_type[pid] = f"{susp_type}_with_suspicion"
+            agents.append(agent)
+
+        player_ids  = [a.agent_id for a in agents]
+        agents_dict = {a.agent_id: a for a in agents}
+
+        roles = assign_roles(
+            player_ids=player_ids,
+            n_players=n_players,
+            rng=_random.Random(seed),
+            suspicion_player_ids=no_wolf_pids,
+        )
+
+        for pid_s in susp_pids:
+            enh = agents_dict.get(pid_s)
+            if isinstance(enh, EnhancedAgent):
+                enh.set_true_roles(roles)
+
+        wolf_cfg = config.get("wolf_strategies", {})
+        if wolf_cfg:
+            rng_w   = _random.Random(seed + 77777)
+            p_bus   = wolf_cfg.get("bus_driver_probability", 0.2)
+            p_false = wolf_cfg.get("false_claimer_probability", 0.5)
+            for pid_w, agent_w in agents_dict.items():
+                if roles.get(pid_w) != Role.WEREWOLF:
+                    continue
+                r = rng_w.random()
+                if r < p_bus:
+                    agent_w.set_wolf_strategy("bus_driver")
+                elif r < p_bus + p_false:
+                    agent_w.set_wolf_strategy("false_claimer")
+
+        game = WerewolfGame(
+            agents=agents_dict,
+            roles=roles,
+            game_id=game_id,
+            seed=seed,
+            max_talk_rounds=config.get("max_talk_rounds", 5),
+            verbose=False,
+            suspicion_agent_ids=susp_pids,
+        )
+        record = game.run()
+
+        game_dir = _os.path.join(output_dir, f"game_{game_id:04d}")
+        _os.makedirs(game_dir, exist_ok=True)
+
+        susp_agents_data: list = []
+        all_evo_rows:     list = []
+        _evol_logger  = EvolutionLogger()
+        _xlsx_exporter = XlsxExporter()
+
+        for pid_s in susp_pids:
+            enh = agents_dict.get(pid_s)
+            if isinstance(enh, EnhancedAgent):
+                evo_rows = enh.get_evolution_rows()
+                all_evo_rows.extend(evo_rows)
+                susp_agents_data.append({
+                    "agent_id":         pid_s,
+                    "agent_name":       enh.name,
+                    "trace_snapshots":  enh.get_trace_snapshots(),
+                    "decision_weights": enh._decision_weights,
+                })
+                _evol_logger.write(
+                    evolution_rows=evo_rows,
+                    game_id=game_id,
+                    output_dir=output_dir,
+                )
+
+        _xlsx_exporter.write(
+            game_record=record,
+            suspicion_agents=susp_agents_data,
+            true_roles=roles,
+            output_dir=output_dir,
+        )
+
+        first_susp = susp_pids[0] if susp_pids else None
+
+        game_summary_data = {
+            "game_id":              record["game_id"],
+            "n_players":            record["n_players"],
+            "winner":               record["winner"].value,
+            "n_days":               record["n_days"],
+            "roles":                record["roles"],
+            "agents":               record["agent_names"],
+            "final_status":         record["status"],
+            "suspicion_agent_id":   first_susp,
+            "suspicion_agent_role": record.get("suspicion_agent_role"),
+        }
+        with open(_os.path.join(game_dir, "game_summary.json"), "w",
+                  encoding="utf-8") as _fh:
+            _json.dump(game_summary_data, _fh, indent=2)
+
+        return record, roles, all_evo_rows, first_susp, pid_to_type, susp_pids
+
+    finally:
+        _sys.stdout = _prev_stdout
+        _devnull.close()
+
+
+
 class _Tee:
     """Mirrors stdout writes to a log file simultaneously."""
     def __init__(self, log_path: str):
@@ -182,6 +396,7 @@ class GameRunner:
             tee.close()
 
     def _run_games_inner(self, n_games: int, output_dir: str) -> tuple:
+        import multiprocessing as _mp
         n_players = self._config.get("players", 8)
         susp_type = self._config.get("suspicion_agent_type", "bayesian")
         comp = self._config.get("agent_composition") or \
@@ -202,22 +417,40 @@ class GameRunner:
                 lr=self._config.get("learning_rate", 0.01),
             )
 
-        summary_rows: list = []
-        records:      list = []
+        n_workers = self._config.get("n_workers", os.cpu_count() or 4)
+        print(f"Parallel workers   : {n_workers}")
+        print(f"Total games        : {n_games}")
+
+        summary_rows:        list = []
+        records:             list = []
+        all_evo_for_learner: list = []
         print_every = max(1, n_games // 100)
+        completed   = 0
 
-        for game_id in range(n_games):
-            record, summary_row = self._run_one(game_id)
-            records.append(record)
-            summary_rows.append(summary_row)
+        args_list = [(self._config, gid) for gid in range(n_games)]
 
-            completed = game_id + 1
-            if completed % print_every == 0 or completed == n_games:
-                pct = completed / n_games * 100
-                print(f"  {completed}/{n_games} games completed ({pct:.0f}%)",
-                      flush=True)
-            elif self._config.get("verbose") and game_id % 10 == 0:
-                print(f"  Completed game {game_id}/{n_games}")
+        with _mp.Pool(processes=n_workers) as pool:
+            for result in pool.imap_unordered(_run_one_game, args_list, chunksize=4):
+                record, roles, all_evo_rows, first_susp, pid_to_type, susp_pids = result
+                summary_row = self._build_summary_row(
+                    record, roles, first_susp, pid_to_type,
+                    all_evo_rows=all_evo_rows, susp_pids=susp_pids,
+                )
+                records.append(record)
+                summary_rows.append(summary_row)
+                if all_evo_rows:
+                    all_evo_for_learner.extend(all_evo_rows)
+
+                completed += 1
+                if completed % print_every == 0 or completed == n_games:
+                    pct = completed / n_games * 100
+                    print(f"  {completed}/{n_games} games completed ({pct:.0f}%)",
+                          flush=True)
+
+        # Batch learner update after all games complete
+        if self._learner and all_evo_for_learner:
+            new_weights = self._learner.update(0, all_evo_for_learner)
+            self._config["suspicion_weights"] = new_weights
 
         self._write_summary(summary_rows, output_dir)
         self._write_config_echo(output_dir)
@@ -228,6 +461,7 @@ class GameRunner:
             print(f"  Weight history -> {hist_path}")
 
         return records, summary_rows
+
 
     # --- Single-game runner -----------------------------------------------
 
