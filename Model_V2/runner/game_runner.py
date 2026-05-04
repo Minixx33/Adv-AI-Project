@@ -417,7 +417,7 @@ class GameRunner:
                 lr=self._config.get("learning_rate", 0.01),
             )
 
-        n_workers = self._config.get("n_workers", os.cpu_count() or 4)
+        n_workers = self._config.get("n_workers", min(os.cpu_count() or 4, 4))
         print(f"Parallel workers   : {n_workers}")
         print(f"Total games        : {n_games}")
 
