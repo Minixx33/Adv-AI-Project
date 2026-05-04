@@ -51,7 +51,9 @@ for AGENT in "${AGENTS[@]}"; do
         $PYTHON run_game.py \
             --config "$CONFIG" \
             --seed "$SEED" \
-            --run-name "$RUN_NAME"
+            --run-name "$RUN_NAME" \
+            --games 10000 \
+            --players 8
 
         echo "  ✓ Done: ${RUN_NAME}"
         echo ""
