@@ -37,7 +37,7 @@ TOTAL_RUNS=$(( ${#AGENTS[@]} * ${#SEEDS[@]} ))
 RUN_NUM=0
 
 for AGENT in "${AGENTS[@]}"; do
-    CONFIG="${PROJECT_DIR}/configs/mixed2_${AGENT}.json"
+    CONFIG="${PROJECT_DIR}/configs/${AGENT}_2sus.json"
 
     for SEED in "${SEEDS[@]}"; do
         RUN_NUM=$(( RUN_NUM + 1 ))
