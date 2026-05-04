@@ -1,0 +1,5 @@
+Agent composition:  8x MCTS
+Parallel workers   : 4
+Total games        : 10000
+  100/10000 games completed (1%)
+  200/10000 games completed (2%)
