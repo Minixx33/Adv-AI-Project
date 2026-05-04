@@ -1,0 +1,470 @@
+#!/usr/bin/env python3
+"""
+stats_analysis.py
+=================
+Post-hoc statistical testing for suspicion-aware Werewolf experiments.
+
+Pools all summary.csv files across seeds within each condition, then runs:
+  - Two-proportion z-test   for village win rate
+  - Mann-Whitney U test     for continuous metrics (sigma_gap, precision, etc.)
+
+Effect sizes reported:
+  - Cohen's h               for proportions
+  - Rank-biserial r         for Mann-Whitney U
+
+Usage
+-----
+Basic (one directory per condition, each containing seed subdirs with summary.csv):
+
+    python stats_analysis.py \\
+        --baseline  results/baseline/ \\
+        --full      results/full_suspicion/ \\
+        --mixed-2   results/mixed_2/ \\
+        --mixed-4   results/mixed_4/ \\
+        --mixed-6   results/mixed_6/ \\
+        --output    stats_results.csv
+
+Multiple directories per condition (e.g. separate agent types):
+
+    python stats_analysis.py \\
+        --baseline  results/baseline_heuristic/ results/baseline_bayesian/ \\
+        --full      results/full_heuristic/ results/full_bayesian/ \\
+        --output    stats_results.csv
+
+The script recursively finds every summary.csv under each supplied path,
+so any depth of subdirectory nesting works.
+
+Dependencies
+------------
+    pip install scipy numpy
+"""
+
+import argparse
+import csv
+import math
+import os
+import sys
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple
+
+import numpy as np
+from scipy import stats as sp_stats
+
+
+# ---------------------------------------------------------------------------
+# Metric definitions
+# ---------------------------------------------------------------------------
+
+# (column_name, display_label)
+CONTINUOUS_METRICS: List[Tuple[str, str]] = [
+    ("sigma_gap",             "Suspicion score gap (Δσ)"),
+    ("wolf_vote_precision",   "Wolf vote precision"),
+    ("wolf_vote_recall",      "Wolf vote recall"),
+    ("false_accusation_rate", "False accusation rate"),
+    ("combined_gap",          "Combined score gap"),
+    ("mean_d1",               "Detector D1 mean"),
+    ("mean_d2",               "Detector D2 mean"),
+    ("mean_d3",               "Detector D3 mean"),
+    ("mean_d4",               "Detector D4 mean"),
+    ("mean_d5",               "Detector D5 mean"),
+]
+
+WIN_COL = "village_win"   # 0/1 or True/False in summary.csv
+
+# Significance threshold — can be overridden via --alpha
+ALPHA = 0.05
+
+
+# ---------------------------------------------------------------------------
+# Loading
+# ---------------------------------------------------------------------------
+
+def find_csvs(paths: List[str]) -> List[Path]:
+    """
+    For each supplied path:
+      - If it is a file ending in .csv, include it directly.
+      - Otherwise recurse and find all summary.csv files beneath it.
+    Returns sorted, deduplicated list.
+    """
+    found: List[Path] = []
+    for raw in paths:
+        p = Path(raw)
+        if not p.exists():
+            print(f"  WARNING: path does not exist — {p}", file=sys.stderr)
+            continue
+        if p.is_file() and p.suffix == ".csv":
+            found.append(p)
+        else:
+            found.extend(p.rglob("summary.csv"))
+    unique = sorted(set(found))
+    return unique
+
+
+def _parse_bool(val: str) -> Optional[int]:
+    """Convert summary.csv village_win values to 0/1, or None if unparseable."""
+    if val in ("True", "1", "true", "1.0"):
+        return 1
+    if val in ("False", "0", "false", "0.0"):
+        return 0
+    return None
+
+
+def load_condition(paths: List[str], label: str) -> Dict:
+    """
+    Load and pool all summary.csv files found under/at `paths`.
+
+    Returns
+    -------
+    dict with keys:
+        label       : str
+        n           : int          total games loaded
+        files       : List[Path]
+        wins        : List[int]    0/1 per game
+        seed_wrs    : List[float]  per-file village win rate (for stability table)
+        <metric>    : List[float]  for each CONTINUOUS_METRICS column
+    """
+    csv_files = find_csvs(paths)
+    if not csv_files:
+        raise FileNotFoundError(
+            f"No summary.csv files found for condition '{label}' "
+            f"under: {paths}"
+        )
+
+    wins: List[int] = []
+    metric_data: Dict[str, List[float]] = {col: [] for col, _ in CONTINUOUS_METRICS}
+    seed_wrs: List[float] = []
+
+    for path in csv_files:
+        file_wins: List[int] = []
+        with open(path, newline="", encoding="utf-8") as fh:
+            reader = csv.DictReader(fh)
+            for row in reader:
+                # Win flag
+                w = _parse_bool(row.get(WIN_COL, ""))
+                if w is not None:
+                    wins.append(w)
+                    file_wins.append(w)
+
+                # Continuous metrics
+                for col, _ in CONTINUOUS_METRICS:
+                    raw = row.get(col, "")
+                    try:
+                        v = float(raw)
+                        if not math.isnan(v):
+                            metric_data[col].append(v)
+                    except (ValueError, TypeError):
+                        pass
+
+        if file_wins:
+            seed_wrs.append(sum(file_wins) / len(file_wins))
+
+    return {
+        "label":    label,
+        "n":        len(wins),
+        "files":    csv_files,
+        "wins":     wins,
+        "seed_wrs": seed_wrs,
+        **metric_data,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Statistical tests
+# ---------------------------------------------------------------------------
+
+def cohens_h(p1: float, p2: float) -> float:
+    """Cohen's h effect size for two proportions."""
+    return 2 * math.asin(math.sqrt(max(0.0, min(1.0, p1)))) \
+         - 2 * math.asin(math.sqrt(max(0.0, min(1.0, p2))))
+
+
+def rank_biserial(U: float, n1: int, n2: int) -> float:
+    """Rank-biserial correlation from Mann-Whitney U statistic."""
+    denom = n1 * n2
+    return (1 - (2 * U) / denom) if denom > 0 else 0.0
+
+
+def _size_label_h(h: float) -> str:
+    h = abs(h)
+    if h < 0.20: return "negligible"
+    if h < 0.50: return "small"
+    if h < 0.80: return "medium"
+    return "large"
+
+
+def _size_label_rb(r: float) -> str:
+    r = abs(r)
+    if r < 0.10: return "negligible"
+    if r < 0.30: return "small"
+    if r < 0.50: return "medium"
+    return "large"
+
+
+def _sig_stars(p: float) -> str:
+    if p < 0.001: return "***"
+    if p < 0.01:  return "**"
+    if p < 0.05:  return "*"
+    return "ns"
+
+
+def test_winrate(ca: Dict, cb: Dict) -> Dict:
+    """Two-proportion z-test on village win rate."""
+    n1, n2 = ca["n"], cb["n"]
+    k1, k2 = sum(ca["wins"]), sum(cb["wins"])
+    if n1 == 0 or n2 == 0:
+        return {}
+    p1, p2 = k1 / n1, k2 / n2
+
+    stat, pval = sp_stats.proportions_ztest(
+        [k1, k2], [n1, n2], alternative="two-sided"
+    )
+    h = cohens_h(p1, p2)
+
+    return {
+        "comparison":     f"{ca['label']} vs {cb['label']}",
+        "metric":         WIN_COL,
+        "metric_label":   "Village win rate",
+        "mean_a":         round(p1, 4),
+        "mean_b":         round(p2, 4),
+        "n_a":            n1,
+        "n_b":            n2,
+        "test":           "Two-proportion z-test",
+        "statistic":      round(float(stat), 4),
+        "p_value":        round(float(pval), 6),
+        "effect_size":    round(h, 4),
+        "effect_type":    "Cohen's h",
+        "effect_label":   _size_label_h(h),
+        "significant":    pval < ALPHA,
+        "stars":          _sig_stars(pval),
+    }
+
+
+def test_metric(ca: Dict, cb: Dict, col: str, col_label: str) -> Optional[Dict]:
+    """Mann-Whitney U test on a continuous metric."""
+    x = ca.get(col, [])
+    y = cb.get(col, [])
+    if not x or not y:
+        return None
+
+    stat, pval = sp_stats.mannwhitneyu(x, y, alternative="two-sided")
+    rb = rank_biserial(float(stat), len(x), len(y))
+
+    return {
+        "comparison":   f"{ca['label']} vs {cb['label']}",
+        "metric":       col,
+        "metric_label": col_label,
+        "mean_a":       round(float(np.mean(x)), 4),
+        "mean_b":       round(float(np.mean(y)), 4),
+        "n_a":          len(x),
+        "n_b":          len(y),
+        "test":         "Mann-Whitney U",
+        "statistic":    round(float(stat), 2),
+        "p_value":      round(float(pval), 6),
+        "effect_size":  round(rb, 4),
+        "effect_type":  "Rank-biserial r",
+        "effect_label": _size_label_rb(rb),
+        "significant":  pval < ALPHA,
+        "stars":        _sig_stars(pval),
+    }
+
+
+# ---------------------------------------------------------------------------
+# Output
+# ---------------------------------------------------------------------------
+
+def print_comparison(rows: List[Dict], label_a: str, label_b: str) -> None:
+    sep = "=" * 76
+    print(f"\n{sep}")
+    print(f"  {label_a}  vs  {label_b}")
+    print(sep)
+    hdr = (f"  {'Metric':<32} {'Mean A':>8} {'Mean B':>8} "
+           f"{'Stat':>10} {'p-value':>10} {'Effect':>8} {'Size':>11} {'Sig':>4}")
+    print(hdr)
+    print(f"  {'-'*32} {'-'*8} {'-'*8} {'-'*10} {'-'*10} {'-'*8} {'-'*11} {'-'*4}")
+    for r in rows:
+        print(
+            f"  {r['metric_label']:<32} "
+            f"{r['mean_a']:>8} "
+            f"{r['mean_b']:>8} "
+            f"{r['statistic']:>10} "
+            f"{r['p_value']:>10} "
+            f"{r['effect_size']:>8} "
+            f"{r['effect_label']:>11} "
+            f"{r['stars']:>4}"
+        )
+
+
+def print_stability(conditions: Dict[str, Dict]) -> None:
+    sep = "=" * 76
+    print(f"\n{sep}")
+    print("  Seed-level stability  (village win rate per seed file: mean ± std)")
+    print(sep)
+    for label, cdata in conditions.items():
+        wrs = cdata["seed_wrs"]
+        if not wrs:
+            continue
+        mu  = float(np.mean(wrs))
+        std = float(np.std(wrs, ddof=1)) if len(wrs) > 1 else 0.0
+        n_seeds = len(wrs)
+        seed_str = "  ".join(f"{w:.4f}" for w in wrs)
+        print(f"  {label:<14}  {mu:.4f} ± {std:.4f}   "
+              f"({n_seeds} seed(s): {seed_str})")
+
+
+def write_csv(rows: List[Dict], path: str) -> None:
+    if not rows:
+        return
+    # Collect all keys in a stable order
+    all_keys: List[str] = []
+    seen = set()
+    for r in rows:
+        for k in r:
+            if k not in seen:
+                all_keys.append(k)
+                seen.add(k)
+    with open(path, "w", newline="", encoding="utf-8") as fh:
+        writer = csv.DictWriter(fh, fieldnames=all_keys, extrasaction="ignore")
+        writer.writeheader()
+        writer.writerows(rows)
+    print(f"\n  Results saved → {path}")
+
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+
+def build_pairs(labels: List[str]) -> List[Tuple[str, str]]:
+    """
+    Build comparison pairs:
+      - baseline vs everything
+      - mixed_2 → mixed_4 → mixed_6 → full_susp (dose-response)
+    """
+    pairs: List[Tuple[str, str]] = []
+    # Baseline vs all others
+    if "baseline" in labels:
+        for lb in labels:
+            if lb != "baseline":
+                pairs.append(("baseline", lb))
+    # Dose-response chain
+    chain = ["mixed_2", "mixed_4", "mixed_6", "full_susp"]
+    for a, b in zip(chain, chain[1:]):
+        if a in labels and b in labels:
+            if (a, b) not in pairs:
+                pairs.append((a, b))
+    return pairs
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Statistical testing for Werewolf suspicion experiments.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=__doc__,
+    )
+    parser.add_argument(
+        "--baseline", nargs="+", metavar="DIR",
+        help="Path(s) for baseline condition (no suspicion)"
+    )
+    parser.add_argument(
+        "--full", nargs="+", metavar="DIR",
+        help="Path(s) for full-suspicion condition"
+    )
+    parser.add_argument(
+        "--mixed-2", nargs="+", dest="mixed2", metavar="DIR",
+        help="Path(s) for mixed population — 2 suspicion agents"
+    )
+    parser.add_argument(
+        "--mixed-4", nargs="+", dest="mixed4", metavar="DIR",
+        help="Path(s) for mixed population — 4 suspicion agents"
+    )
+    parser.add_argument(
+        "--mixed-6", nargs="+", dest="mixed6", metavar="DIR",
+        help="Path(s) for mixed population — 6 suspicion agents"
+    )
+    parser.add_argument(
+        "--output", default="stats_results.csv",
+        help="Output CSV path (default: stats_results.csv)"
+    )
+    parser.add_argument(
+        "--alpha", type=float, default=0.05,
+        help="Significance level α (default: 0.05)"
+    )
+    args = parser.parse_args()
+
+    global ALPHA
+    ALPHA = args.alpha
+
+    # Map label → paths
+    raw_conditions = {
+        "baseline":  args.baseline,
+        "full_susp": args.full,
+        "mixed_2":   args.mixed2,
+        "mixed_4":   args.mixed4,
+        "mixed_6":   args.mixed6,
+    }
+
+    # Load only the conditions the user supplied
+    print("Loading conditions...")
+    conditions: Dict[str, Dict] = {}
+    for label, paths in raw_conditions.items():
+        if not paths:
+            continue
+        try:
+            data = load_condition(paths, label)
+            conditions[label] = data
+            print(
+                f"  {label:<14}: {data['n']:>7,} games  "
+                f"({len(data['files'])} file(s))  "
+                f"win_rate={sum(data['wins'])/data['n']:.4f}"
+                if data["n"] else f"  {label:<14}: 0 games loaded"
+            )
+        except FileNotFoundError as exc:
+            print(f"  WARNING: {exc}", file=sys.stderr)
+
+    if len(conditions) < 2:
+        print("ERROR: Need at least 2 conditions. Check your paths.", file=sys.stderr)
+        sys.exit(1)
+
+    # Build comparison pairs
+    pairs = build_pairs(list(conditions.keys()))
+    print(f"\nRunning {len(pairs)} comparison(s)  (α = {ALPHA})...")
+
+    all_results: List[Dict] = []
+
+    for la, lb in pairs:
+        ca, cb = conditions[la], conditions[lb]
+        comp_rows: List[Dict] = []
+
+        # Win rate
+        r = test_winrate(ca, cb)
+        if r:
+            # Rename mean_a/mean_b for clarity
+            r["label_a"] = la
+            r["label_b"] = lb
+            comp_rows.append(r)
+
+        # Continuous metrics
+        for col, col_label in CONTINUOUS_METRICS:
+            r = test_metric(ca, cb, col, col_label)
+            if r:
+                r["label_a"] = la
+                r["label_b"] = lb
+                comp_rows.append(r)
+
+        print_comparison(comp_rows, la, lb)
+        all_results.extend(comp_rows)
+
+    # Stability table
+    print_stability(conditions)
+
+    # Significance key
+    print(
+        f"\n  α = {ALPHA}   "
+        "*** p<0.001   ** p<0.01   * p<0.05   ns = not significant"
+    )
+
+    # Write CSV
+    write_csv(all_results, args.output)
+
+
+if __name__ == "__main__":
+    main()
