@@ -3,7 +3,8 @@
   "players": 8,
   "suspicion_agent_type": "bayesian",
   "agent_composition": {
-    "bayesian_with_suspicion": 8
+    "bayesian": 2,
+    "bayesian_with_suspicion": 6
   },
   "suspicion_weights": {
     "a1": 0.30,

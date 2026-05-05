@@ -1,0 +1,30 @@
+{
+  "games": 10000,
+  "players": 8,
+  "suspicion_agent_type": "bayesian",
+  "output_dir": "./results/bayesian_fullsus_seed123_2026-05-05_03-18-30",
+  "seed": 123,
+  "verbose": false,
+  "grid_search": false,
+  "max_talk_rounds": 5,
+  "suspicion_weights": {
+    "a1": 0.30000575652561295,
+    "a2": 0.15005252565468172,
+    "a3": 0.19969561130610272,
+    "a4": 0.2000700342062423,
+    "a5": 0.15017607230736035,
+    "w1": 0.599963,
+    "w2": 0.400037
+  },
+  "mcts_simulations": 500,
+  "mcts_depth": 5,
+  "agent_composition": {
+    "bayesian": 2,
+    "bayesian_with_suspicion": 6
+  },
+  "wolf_strategies": {
+    "bus_driver_probability": 0.2,
+    "false_claimer_probability": 0.5
+  },
+  "run_name": "bayesian_fullsus_seed123"
+}

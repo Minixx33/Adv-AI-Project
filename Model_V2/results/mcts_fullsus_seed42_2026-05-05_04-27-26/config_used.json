@@ -1,0 +1,30 @@
+{
+  "games": 10000,
+  "players": 8,
+  "suspicion_agent_type": "mcts",
+  "output_dir": "./results/mcts_fullsus_seed42_2026-05-05_04-27-26",
+  "seed": 42,
+  "verbose": false,
+  "grid_search": false,
+  "max_talk_rounds": 5,
+  "suspicion_weights": {
+    "a1": 0.3000980644352782,
+    "a2": 0.1499242100842784,
+    "a3": 0.20000990248683195,
+    "a4": 0.19991874845326146,
+    "a5": 0.15004907454035005,
+    "w1": 0.599541,
+    "w2": 0.400459
+  },
+  "mcts_simulations": 500,
+  "mcts_depth": 5,
+  "agent_composition": {
+    "mcts": 2,
+    "mcts_with_suspicion": 6
+  },
+  "wolf_strategies": {
+    "bus_driver_probability": 0.2,
+    "false_claimer_probability": 0.5
+  },
+  "run_name": "mcts_fullsus_seed42"
+}

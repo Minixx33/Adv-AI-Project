@@ -3,7 +3,8 @@
   "players": 8,
   "suspicion_agent_type": "heuristic",
   "agent_composition": {
-    "heuristic_with_suspicion": 8
+    "heuristic": 2,
+    "heuristic_with_suspicion": 6
   },
   "suspicion_weights": {
     "a1": 0.30,
