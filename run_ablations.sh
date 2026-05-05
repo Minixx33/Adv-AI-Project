@@ -73,7 +73,7 @@ _elapsed() {
 _run() {
     local label="$1"; shift
     if $DRY_RUN; then
-        echo "  [DRY-RUN] python $*"
+        echo "  [DRY-RUN] python3 $*"
         return 0
     fi
     local t_start=$SECONDS
