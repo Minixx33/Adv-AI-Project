@@ -18,12 +18,12 @@
 #   Seeds   : 42  123  456
 #
 # Output:
-#   All results land in ./results/ablations/
+#   All results land in ./Model_V2/results/ablations/
 #   Each run gets its own timestamped subfolder.
-#   A master log is written to ./results/ablations/ablations_master.log
+#   A master log is written to ./Model_V2/results/ablations/ablations_master.log
 #
 # Usage:
-#   cd Model_V2
+#   cd Adv-AI-Project        # project root
 #   bash run_ablations.sh
 #
 #   Override output dir:
@@ -40,7 +40,7 @@ AGENT="bayesian"
 GAMES=10000
 LEARNER_GAMES=2000       # learner runs sequentially; cap to keep runtime sane
 SEEDS=(42 123 456)
-OUTPUT="./results/ablations"
+OUTPUT="./Model_V2/results/ablations"
 DRY_RUN=false
 
 # ── Arg parsing ───────────────────────────────────────────────────────────────
@@ -54,6 +54,7 @@ done
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ABLATIONS_DIR="$SCRIPT_DIR/Model_V2/ablations"
 LOG_DIR="$OUTPUT"
 mkdir -p "$LOG_DIR"
 MASTER_LOG="$LOG_DIR/ablations_master.log"
@@ -106,7 +107,7 @@ SUITE_START=$SECONDS
 # ── 1. Detector leave-one-out ─────────────────────────────────────────────────
 _log ""
 _log "── ABLATION 1/4: Detector Leave-One-Out ─────────────────────"
-_log "  6 conditions (all_detectors + no_d1..no_d5) × ${#SEEDS[@]} seeds"
+_log "  6 conditions (all_detectors + no_a1..no_a5) × ${#SEEDS[@]} seeds"
 _log "  Approx: 6 × $GAMES × ${#SEEDS[@]} = $(( 6 * GAMES * ${#SEEDS[@]} )) games total"
 
 for SEED in "${SEEDS[@]}"; do
@@ -114,7 +115,7 @@ for SEED in "${SEEDS[@]}"; do
     _log ""
     _log "  Run $RUN_NUM/$TOTAL_RUNS — detector ablation, seed=$SEED"
     _run "detector_seed${SEED}" \
-        "$SCRIPT_DIR/ablations/run_ablation_detector.py" \
+        "$ABLATIONS_DIR/run_ablation_detector.py" \
         --experiment-name "detector" \
         --seed "$SEED" \
         --games "$GAMES" \
@@ -133,7 +134,7 @@ for SEED in "${SEEDS[@]}"; do
     _log ""
     _log "  Run $RUN_NUM/$TOTAL_RUNS — weights ablation, seed=$SEED"
     _run "weights_seed${SEED}" \
-        "$SCRIPT_DIR/ablations/run_ablation_weights.py" \
+        "$ABLATIONS_DIR/run_ablation_weights.py" \
         --experiment-name "weights" \
         --seed "$SEED" \
         --games "$GAMES" \
@@ -152,7 +153,7 @@ for SEED in "${SEEDS[@]}"; do
     _log ""
     _log "  Run $RUN_NUM/$TOTAL_RUNS — adversarial ablation, seed=$SEED"
     _run "adversarial_seed${SEED}" \
-        "$SCRIPT_DIR/ablations/run_ablation_adversarial.py" \
+        "$ABLATIONS_DIR/run_ablation_adversarial.py" \
         --experiment-name "adversarial" \
         --seed "$SEED" \
         --games "$GAMES" \
@@ -173,7 +174,7 @@ for SEED in "${SEEDS[@]}"; do
     _log ""
     _log "  Run $RUN_NUM/$TOTAL_RUNS — learner ablation, seed=$SEED"
     _run "learner_seed${SEED}" \
-        "$SCRIPT_DIR/ablations/run_ablation_learner.py" \
+        "$ABLATIONS_DIR/run_ablation_learner.py" \
         --experiment-name "learner" \
         --seed "$SEED" \
         --games "$LEARNER_GAMES" \
