@@ -1,0 +1,24 @@
+{
+  "players": 8,
+  "seed": 123,
+  "suspicion_agent_type": "bayesian",
+  "agent_composition": {
+    "bayesian_with_suspicion": 6,
+    "bayesian": 2
+  },
+  "suspicion_weights": {
+    "a1": 0.37125,
+    "a2": 0.185625,
+    "a3": 0.01,
+    "a4": 0.24749999999999991,
+    "a5": 0.185625,
+    "w1": 0.507562,
+    "w2": 0.492438
+  },
+  "n_workers": 4,
+  "max_talk_rounds": 5,
+  "mcts_simulations": 500,
+  "mcts_depth": 5,
+  "write_xlsx": false,
+  "output_dir": "./results/ablations/learner_seed123_2026-05-05_08-34-24/online_learner"
+}

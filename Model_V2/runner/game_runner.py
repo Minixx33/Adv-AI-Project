@@ -212,8 +212,6 @@ def _run_one_game(args: tuple) -> tuple:
                     if agent_type == "mcts":
                         agent.n_simulations = config.get("mcts_simulations", 500)
                         agent.max_depth     = config.get("mcts_depth", 5)
-                    if agent_type == "logic_based":
-                        no_wolf_pids.append(pid)
                 else:
                     raise ValueError(f"Unknown agent type: '{agent_type}'")
 
@@ -301,12 +299,13 @@ def _run_one_game(args: tuple) -> tuple:
                     output_dir=output_dir,
                 )
 
-        _xlsx_exporter.write(
-            game_record=record,
-            suspicion_agents=susp_agents_data,
-            true_roles=roles,
-            output_dir=output_dir,
-        )
+        if config.get("write_xlsx", False):
+            _xlsx_exporter.write(
+                game_record=record,
+                suspicion_agents=susp_agents_data,
+                true_roles=roles,
+                output_dir=output_dir,
+            )
 
         first_susp = susp_pids[0] if susp_pids else None
 
@@ -421,36 +420,28 @@ class GameRunner:
         print(f"Parallel workers   : {n_workers}")
         print(f"Total games        : {n_games}")
 
-        summary_rows:        list = []
-        records:             list = []
-        all_evo_for_learner: list = []
+        summary_rows: list = []
         print_every = max(1, n_games // 100)
         completed   = 0
 
         args_list = [(self._config, gid) for gid in range(n_games)]
 
         with _mp.Pool(processes=n_workers) as pool:
-            for result in pool.imap_unordered(_run_one_game, args_list, chunksize=4):
+            for result in pool.imap_unordered(_run_one_game, args_list, chunksize=1):
                 record, roles, all_evo_rows, first_susp, pid_to_type, susp_pids = result
                 summary_row = self._build_summary_row(
                     record, roles, first_susp, pid_to_type,
                     all_evo_rows=all_evo_rows, susp_pids=susp_pids,
                 )
-                records.append(record)
                 summary_rows.append(summary_row)
-                if all_evo_rows:
-                    all_evo_for_learner.extend(all_evo_rows)
+                # Drop record and evo_rows immediately — no need to hold 10k games in RAM
+                del record, roles, all_evo_rows
 
                 completed += 1
                 if completed % print_every == 0 or completed == n_games:
                     pct = completed / n_games * 100
                     print(f"  {completed}/{n_games} games completed ({pct:.0f}%)",
                           flush=True)
-
-        # Batch learner update after all games complete
-        if self._learner and all_evo_for_learner:
-            new_weights = self._learner.update(0, all_evo_for_learner)
-            self._config["suspicion_weights"] = new_weights
 
         self._write_summary(summary_rows, output_dir)
         self._write_config_echo(output_dir)
@@ -460,7 +451,7 @@ class GameRunner:
             hist_path = self._learner.write_history(output_dir)
             print(f"  Weight history -> {hist_path}")
 
-        return records, summary_rows
+        return [], summary_rows
 
 
     # --- Single-game runner -----------------------------------------------

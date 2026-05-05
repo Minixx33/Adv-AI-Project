@@ -1,0 +1,24 @@
+{
+  "players": 8,
+  "seed": 456,
+  "suspicion_agent_type": "bayesian",
+  "agent_composition": {
+    "bayesian_with_suspicion": 4,
+    "bayesian": 4
+  },
+  "n_workers": 4,
+  "max_talk_rounds": 5,
+  "mcts_simulations": 500,
+  "mcts_depth": 5,
+  "write_xlsx": false,
+  "suspicion_weights": {
+    "a1": 0.3,
+    "a2": 0.15,
+    "a3": 0.2,
+    "a4": 0.2,
+    "a5": 0.15,
+    "w1": 0.0,
+    "w2": 1.0
+  },
+  "output_dir": "./results/ablations_2/weights_seed456_2026-05-05_11-07-09/w1_0.0_w2_1.0"
+}
