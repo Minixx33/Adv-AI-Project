@@ -78,7 +78,7 @@ _run() {
     fi
     local t_start=$SECONDS
     _log "START  $label"
-    python "$@" 2>&1 | tee -a "$MASTER_LOG"
+    python3 "$@" 2>&1 | tee -a "$MASTER_LOG"
     local exit_code=${PIPESTATUS[0]}
     local elapsed=$(( SECONDS - t_start ))
     if [[ $exit_code -eq 0 ]]; then
