@@ -59,10 +59,12 @@ _DEFAULT_WEIGHTS = {
     "w1": 0.60, "w2": 0.40,
 }
 
+# Standard condition uses the same mixed strategy as main experiments (0.2/0.5)
+# so the baseline VWR is comparable to the main experiment results.
 # (label, wolf_strategies dict, use_suspicion)
 _CONDITIONS = [
-    ("standard_no_susp",        {},                                                           False),
-    ("standard_with_susp",      {},                                                           True),
+    ("standard_no_susp",        {"bus_driver_probability": 0.2, "false_claimer_probability": 0.5}, False),
+    ("standard_with_susp",      {"bus_driver_probability": 0.2, "false_claimer_probability": 0.5}, True),
     ("bus_driver_no_susp",      {"bus_driver_probability": 1.0, "false_claimer_probability": 0.0}, False),
     ("bus_driver_with_susp",    {"bus_driver_probability": 1.0, "false_claimer_probability": 0.0}, True),
     ("false_claimer_no_susp",   {"bus_driver_probability": 0.0, "false_claimer_probability": 1.0}, False),
@@ -106,17 +108,22 @@ def _build_config(args, wolf_strategies: dict, use_suspicion: bool) -> dict:
     """
     Build config for one condition.
 
-    With suspicion:    6 suspicion-enhanced + 2 base agents.
+    With suspicion:    4 suspicion-enhanced + 4 base agents.
     Without suspicion: 8 base agents, suspicion_agent_type = "none".
 
-    With 8 players (2 wolves) the role_assigner allows at most 6 suspicion
-    agents (6 non-wolf roles: 4 Villager, 1 Seer, 1 Possessed).
+    Composition order matters: base agents are assigned PIDs 1-4, enhanced
+    agents PIDs 5-8. The role_assigner then restricts wolves to PIDs 1-4
+    (the base agent slots). This mirrors the main experiment setup and ensures
+    the Seer (always in PIDs 5-8, enhanced) divines into the wolf-eligible
+    range (PIDs 1-4) first, giving the village a realistic chance to find wolves.
     """
     agent     = args.agent
     n_workers = args.workers or min(os.cpu_count() or 4, 4)
 
     if use_suspicion:
-        composition  = {f"{agent}_with_suspicion": 6, agent: 2}
+        # base agents first → PIDs 1-4 (wolves possible here)
+        # enhanced agents second → PIDs 5-8 (non-wolf, Seer divines PIDs 1-4 first)
+        composition  = {agent: 4, f"{agent}_with_suspicion": 4}
         susp_type    = agent
         susp_weights = dict(_DEFAULT_WEIGHTS)
     else:
@@ -245,13 +252,13 @@ def main():
     print(f"  Output      : {top_dir}")
     print(f"{'='*60}\n")
 
-    # Map label → wolf_strategy string for the aggregate row
+    # Map label → wolf_strategy string for the aggregate row.
+    # "standard" is the mixed baseline (0.2/0.5) matching main experiments.
+    # Pure single-strategy conditions are identified by probability == 1.0.
     def _wolf_strategy(wolf_cfg: dict) -> str:
-        if not wolf_cfg:
-            return "standard"
-        if wolf_cfg.get("bus_driver_probability", 0) > 0:
+        if wolf_cfg.get("bus_driver_probability", 0) == 1.0:
             return "bus_driver"
-        if wolf_cfg.get("false_claimer_probability", 0) > 0:
+        if wolf_cfg.get("false_claimer_probability", 0) == 1.0:
             return "false_claimer"
         return "standard"
 

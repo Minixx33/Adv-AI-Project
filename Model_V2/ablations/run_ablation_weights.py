@@ -97,9 +97,12 @@ def _make_top_dir(args) -> str:
 
 def _base_config(args) -> dict:
     """
-    Composition: 6 suspicion-enhanced + 2 base agents.
-    With 8 players (2 wolves) the role_assigner allows at most 6 suspicion
-    agents (6 non-wolf roles: 4 Villager, 1 Seer, 1 Possessed).
+    Composition: 4 suspicion-enhanced + 4 base agents.
+    Composition order matters: base agents are assigned PIDs 1-4, enhanced
+    agents PIDs 5-8. The role_assigner then restricts wolves to PIDs 1-4
+    (the base agent slots). This mirrors the main experiment setup and ensures
+    the Seer (always in PIDs 5-8, enhanced) divines into the wolf-eligible
+    range (PIDs 1-4) first, giving the village a realistic chance to find wolves.
     """
     agent     = args.agent
     n_workers = args.workers or min(os.cpu_count() or 4, 4)
@@ -108,8 +111,12 @@ def _base_config(args) -> dict:
         "seed":                 args.seed,
         "suspicion_agent_type": agent,
         "agent_composition": {
-            f"{agent}_with_suspicion": 6,
-            agent:                     2,
+            agent:                     4,
+            f"{agent}_with_suspicion": 4,
+        },
+        "wolf_strategies": {
+            "bus_driver_probability":  0.2,
+            "false_claimer_probability": 0.5,
         },
         "n_workers":            n_workers,
         "max_talk_rounds":      5,
