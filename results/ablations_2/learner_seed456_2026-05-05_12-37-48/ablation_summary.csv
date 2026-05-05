@@ -1,3 +1,0 @@
-condition,n_games,village_win_rate,wolf_vote_precision,wolf_vote_recall,false_accusation_rate,sigma_gap,combined_gap,avg_days
-fixed_weights,2000,0.0,0.0,0.0,1.0,-0.0193,0.007,2.0
-online_learner,2000,0.0,0.0,0.0,1.0,-0.0113,0.0085,2.0
