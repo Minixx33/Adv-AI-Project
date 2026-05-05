@@ -1,0 +1,28 @@
+{
+  "players": 8,
+  "seed": 42,
+  "suspicion_agent_type": "bayesian",
+  "agent_composition": {
+    "bayesian": 4,
+    "bayesian_with_suspicion": 4
+  },
+  "suspicion_weights": {
+    "a1": 0.2923568238981784,
+    "a2": 0.1583891021281939,
+    "a3": 0.010007379988379578,
+    "a4": 0.21118546950425773,
+    "a5": 0.32806122448099034,
+    "w1": 0.520618,
+    "w2": 0.479382
+  },
+  "wolf_strategies": {
+    "bus_driver_probability": 0.2,
+    "false_claimer_probability": 0.5
+  },
+  "n_workers": 4,
+  "max_talk_rounds": 5,
+  "mcts_simulations": 500,
+  "mcts_depth": 5,
+  "write_xlsx": false,
+  "output_dir": "./results/ablations_3/learner_seed42_2026-05-05_18-36-02/online_learner"
+}
