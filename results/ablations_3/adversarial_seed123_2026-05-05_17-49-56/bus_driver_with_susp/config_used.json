@@ -1,10 +1,10 @@
 {
   "players": 8,
-  "seed": 42,
+  "seed": 123,
   "suspicion_agent_type": "bayesian",
   "agent_composition": {
-    "bayesian_with_suspicion": 6,
-    "bayesian": 2
+    "bayesian": 4,
+    "bayesian_with_suspicion": 4
   },
   "n_workers": 4,
   "max_talk_rounds": 5,
@@ -24,5 +24,5 @@
     "bus_driver_probability": 1.0,
     "false_claimer_probability": 0.0
   },
-  "output_dir": "./results/ablations/adversarial_seed42_2026-05-05_07-24-29/bus_driver_with_susp"
+  "output_dir": "./results/ablations_3/adversarial_seed123_2026-05-05_17-49-56/bus_driver_with_susp"
 }

@@ -1,6 +1,6 @@
 {
   "players": 8,
-  "seed": 42,
+  "seed": 123,
   "suspicion_agent_type": "none",
   "agent_composition": {
     "bayesian": 8
@@ -14,5 +14,5 @@
     "bus_driver_probability": 0.0,
     "false_claimer_probability": 1.0
   },
-  "output_dir": "./results/ablations/adversarial_seed42_2026-05-05_07-24-29/false_claimer_no_susp"
+  "output_dir": "./results/ablations_3/adversarial_seed123_2026-05-05_17-49-56/false_claimer_no_susp"
 }
