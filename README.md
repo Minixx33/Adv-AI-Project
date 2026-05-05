@@ -17,12 +17,13 @@ A self-contained Python simulation engine for the social-deduction game *Werewol
 9. [CLI Reference](#9-cli-reference)
 10. [Running Experiments](#10-running-experiments)
 11. [Ablation Studies](#11-ablation-studies)
-12. [Statistical Analysis](#12-statistical-analysis)
-13. [Output Files](#13-output-files)
-14. [Talk Protocol](#14-talk-protocol)
-15. [Grid Search (Hyperparameter Optimization)](#15-grid-search-hyperparameter-optimization)
-16. [Legacy AIWolf Server Mode](#16-legacy-aiwolf-server-mode)
-17. [Project Architecture Deep Dive](#17-project-architecture-deep-dive)
+12. [Data Fixes](#12-data-fixes)
+13. [Statistical Analysis](#13-statistical-analysis)
+14. [Output Files](#14-output-files)
+15. [Talk Protocol](#15-talk-protocol)
+16. [Grid Search (Hyperparameter Optimization)](#16-grid-search-hyperparameter-optimization)
+17. [Legacy AIWolf Server Mode](#17-legacy-aiwolf-server-mode)
+18. [Project Architecture Deep Dive](#18-project-architecture-deep-dive)
 
 ---
 
@@ -541,9 +542,48 @@ Results land in `Model_V2/results/ablations/`. A timestamped master log is writt
 
 ---
 
-## 12. Statistical Analysis
+## 12. Data Fixes
 
-After all experiment runs are complete, pool results across seeds and run significance tests:
+### `fix_susp_won.py` — Correct the suspicion-agent win column
+
+Before running statistical analysis, apply this patch to every `summary.csv`. It adds a corrected `n_village_sus_won` column that fixes a bug in the original `n_susp_agents_won` metric.
+
+**The problem:** `n_susp_agents_won` counts every suspicion agent whose *team* won — including POSSESSED agents, who are wolf-aligned and win when wolves win. This inflates the metric in wolf-win games and can produce `n_susp_agents_won > n_susp_agents_survived`.
+
+**The fix:** `n_village_sus_won` is set to the number of suspicion agents when the village wins, and 0 otherwise — correctly counting only agents on the winning village side.
+
+```bash
+# Patch all summary.csv files under Model_V2/results/ (default)
+python Model_V2/fix_susp_won.py
+
+# Patch a custom results directory
+python Model_V2/fix_susp_won.py --results path/to/results/
+
+# Preview changes without writing any files
+python Model_V2/fix_susp_won.py --dry-run
+```
+
+The script skips files that are already patched (already have `n_village_sus_won`) and files missing required columns. It reports a summary of patched vs. skipped files on completion.
+
+---
+
+## 13. Statistical Analysis
+
+`stats_analysis.py` is the main post-hoc analysis script. After all experiment runs are complete (and after running `fix_susp_won.py`), use it to pool results across seeds, run significance tests, and produce a results CSV for the paper.
+
+### What it does
+
+It recursively finds every `summary.csv` under each supplied directory, pools all games across seeds, and runs two families of tests for every pairwise comparison:
+
+**Village win rate** — Two-proportion z-test with Cohen's h as the effect size. Tests whether the suspicion condition produces a significantly different village win rate than the baseline.
+
+**Continuous metrics** — Mann-Whitney U test (non-parametric) with rank-biserial r as the effect size. Applied to: suspicion score gap (Δσ), wolf vote precision, wolf vote recall, false accusation rate, combined score gap, and per-detector means D1–D5.
+
+Comparisons are built automatically: baseline vs. every other condition, plus the mixed-population dose-response chain (mixed-2 → mixed-4 → mixed-6 → full suspicion).
+
+Output includes a formatted table per comparison printed to stdout, a seed-level stability table (mean ± std of win rate across seed files), and a full results CSV.
+
+### Running it
 
 ```bash
 python Model_V2/stats_analysis.py \
@@ -555,21 +595,66 @@ python Model_V2/stats_analysis.py \
     --output    stats_results.csv
 ```
 
-The script recursively finds all `summary.csv` files under each supplied directory (any seed subdirectory structure works), pools all games, and runs:
-
-- **Two-proportion z-test** on village win rate (effect size: Cohen's h)
-- **Mann-Whitney U test** on continuous metrics: σ gap, wolf vote precision/recall, false accusation rate, per-detector means D1–D5 (effect size: rank-biserial r)
-
-Comparisons run automatically: baseline vs. all conditions, plus the mixed-population dose-response chain. Significance stars (`***` p < 0.001 / `**` p < 0.01 / `*` p < 0.05 / `ns`) and a seed-level stability table are printed to stdout.
+Each `--baseline`, `--full`, etc. argument accepts one or more paths, so you can pool multiple agent types into a single condition:
 
 ```bash
-# Change significance threshold
+python Model_V2/stats_analysis.py \
+    --baseline  results/baseline_bayesian/ results/baseline_heuristic/ \
+    --full      results/full_bayesian/ results/full_heuristic/ \
+    --output    stats_results.csv
+```
+
+All flags:
+
+| Flag | Description |
+|------|-------------|
+| `--baseline DIR [DIR...]` | Path(s) for the no-suspicion condition |
+| `--full DIR [DIR...]` | Path(s) for the full-suspicion condition |
+| `--mixed-2 DIR [DIR...]` | Path(s) for mixed-2 condition |
+| `--mixed-4 DIR [DIR...]` | Path(s) for mixed-4 condition |
+| `--mixed-6 DIR [DIR...]` | Path(s) for mixed-6 condition |
+| `--output FILE` | Output CSV path (default: `stats_results.csv`) |
+| `--alpha FLOAT` | Significance threshold (default: `0.05`) |
+
+```bash
+# Stricter significance threshold
 python Model_V2/stats_analysis.py ... --alpha 0.01
+```
+
+Significance stars in output: `***` p < 0.001 / `**` p < 0.01 / `*` p < 0.05 / `ns` not significant.
+
+### Dependencies
+
+```bash
+pip install scipy numpy statsmodels
+```
+
+### Recommended workflow
+
+```bash
+# 1. Run all experiments
+bash run_baseline_experiments.sh
+bash run_fullsus_experiments.sh
+bash run_mixed2_experiments.sh
+bash run_4sus_experiments.sh
+bash run_6sus_experiments.sh
+
+# 2. Fix the suspicion-agent win column
+python Model_V2/fix_susp_won.py
+
+# 3. Run statistical analysis
+python Model_V2/stats_analysis.py \
+    --baseline Model_V2/results/baseline/ \
+    --full     Model_V2/results/full_suspicion/ \
+    --mixed-2  Model_V2/results/mixed_2/ \
+    --mixed-4  Model_V2/results/mixed_4/ \
+    --mixed-6  Model_V2/results/mixed_6/ \
+    --output   stats_results.csv
 ```
 
 ---
 
-## 13. Output Files
+## 14. Output Files
 
 Each run produces the following in its output directory:
 
@@ -633,7 +718,7 @@ Eliminated: P5 (was Werewolf)
 
 ---
 
-## 14. Talk Protocol
+## 15. Talk Protocol
 
 Each agent gets up to **5 talk tokens per round**, cycling until it emits `OVER`, uses all 5 tokens, or emits `SKIP`. An 8-player game produces ~30 tokens per round.
 
@@ -664,7 +749,7 @@ Each agent gets up to **5 talk tokens per round**, cycling until it emits `OVER`
 
 ---
 
-## 15. Grid Search (Hyperparameter Optimization)
+## 16. Grid Search (Hyperparameter Optimization)
 
 The two-stage grid search finds optimal detector and decision weights.
 
@@ -695,7 +780,7 @@ Results are saved to `results/grid_search/grid_search_results.csv`. The top 5 co
 
 ---
 
-## 16. Legacy AIWolf Server Mode
+## 17. Legacy AIWolf Server Mode
 
 The original AIWolfPy interface is still available for connecting Python agents to the official Java-based AIWolf competition server.
 
@@ -718,7 +803,7 @@ For the competition server, make sure your client name matches your account name
 
 ---
 
-## 17. Project Architecture Deep Dive
+## 18. Project Architecture Deep Dive
 
 ### Game Loop (`werewolf/game.py`)
 
