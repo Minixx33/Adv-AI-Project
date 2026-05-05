@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Read(//c/Users/USER/.claude/projects/c--Users-USER-Documents-GitHub-Adv-AI-Project/memory/**)",
-      "Bash(python -m pytest tests/test_game.py tests/test_agents.py tests/test_suspicion.py -v)"
-    ]
-  }
-}
