@@ -1,0 +1,24 @@
+comparison,metric,metric_label,mean_a,mean_b,n_a,n_b,test,statistic,p_value,effect_size,effect_type,effect_label,significant,stars,label_a,label_b
+baseline vs full_susp,village_win,Village win rate,0.1873,0.3232,80000,90000,Two-proportion z-test,-63.8168,0.0,-0.3142,Cohen's h,small,True,***,baseline,full_susp
+baseline vs full_susp,wolf_vote_precision,Wolf vote precision,0.2479,0.3964,80000,90000,Mann-Whitney U,2272702423.0,0.0,0.3687,Rank-biserial r,medium,True,***,baseline,full_susp
+baseline vs full_susp,wolf_vote_recall,Wolf vote recall,0.6742,0.8605,80000,90000,Mann-Whitney U,2644784851.5,0.0,0.2653,Rank-biserial r,small,True,***,baseline,full_susp
+baseline vs full_susp,false_accusation_rate,False accusation rate,0.7521,0.6036,80000,90000,Mann-Whitney U,4927297577.0,0.0,-0.3687,Rank-biserial r,medium,True,***,baseline,full_susp
+baseline vs mixed_2,village_win,Village win rate,0.1873,0.252,80000,90000,Two-proportion z-test,-32.0583,0.0,-0.1566,Cohen's h,negligible,True,***,baseline,mixed_2
+baseline vs mixed_2,wolf_vote_precision,Wolf vote precision,0.2479,0.2934,80000,90000,Mann-Whitney U,3109447058.0,0.0,0.1363,Rank-biserial r,small,True,***,baseline,mixed_2
+baseline vs mixed_2,wolf_vote_recall,Wolf vote recall,0.6742,0.7739,80000,90000,Mann-Whitney U,3087879253.0,0.0,0.1423,Rank-biserial r,small,True,***,baseline,mixed_2
+baseline vs mixed_2,false_accusation_rate,False accusation rate,0.7521,0.7066,80000,90000,Mann-Whitney U,4090552942.0,0.0,-0.1363,Rank-biserial r,small,True,***,baseline,mixed_2
+baseline vs mixed_4,village_win,Village win rate,0.1873,0.2436,80000,90000,Two-proportion z-test,-28.063,0.0,-0.137,Cohen's h,negligible,True,***,baseline,mixed_4
+baseline vs mixed_4,wolf_vote_precision,Wolf vote precision,0.2479,0.3186,80000,90000,Mann-Whitney U,2901483626.0,0.0,0.194,Rank-biserial r,small,True,***,baseline,mixed_4
+baseline vs mixed_4,wolf_vote_recall,Wolf vote recall,0.6742,0.7865,80000,90000,Mann-Whitney U,3012229367.5,0.0,0.1633,Rank-biserial r,small,True,***,baseline,mixed_4
+baseline vs mixed_4,false_accusation_rate,False accusation rate,0.7521,0.6814,80000,90000,Mann-Whitney U,4298516374.0,0.0,-0.194,Rank-biserial r,small,True,***,baseline,mixed_4
+mixed_2 vs mixed_4,village_win,Village win rate,0.252,0.2436,90000,90000,Two-proportion z-test,4.1656,3.1e-05,0.0196,Cohen's h,negligible,True,***,mixed_2,mixed_4
+mixed_2 vs mixed_4,sigma_gap,Suspicion score gap (Δσ),0.0223,-0.0017,90000,90000,Mann-Whitney U,5015956212.0,0.0,-0.2385,Rank-biserial r,small,True,***,mixed_2,mixed_4
+mixed_2 vs mixed_4,wolf_vote_precision,Wolf vote precision,0.2934,0.3186,90000,90000,Mann-Whitney U,3793285196.5,0.0,0.0634,Rank-biserial r,negligible,True,***,mixed_2,mixed_4
+mixed_2 vs mixed_4,wolf_vote_recall,Wolf vote recall,0.7739,0.7865,90000,90000,Mann-Whitney U,3957778410.5,0.0,0.0228,Rank-biserial r,negligible,True,***,mixed_2,mixed_4
+mixed_2 vs mixed_4,false_accusation_rate,False accusation rate,0.7066,0.6814,90000,90000,Mann-Whitney U,4306714803.5,0.0,-0.0634,Rank-biserial r,negligible,True,***,mixed_2,mixed_4
+mixed_2 vs mixed_4,combined_gap,Combined score gap,0.025,0.031,90000,90000,Mann-Whitney U,3988526493.5,0.0,0.0152,Rank-biserial r,negligible,True,***,mixed_2,mixed_4
+mixed_2 vs mixed_4,mean_d1,Detector D1 mean,0.103,0.1245,90000,90000,Mann-Whitney U,3610538975.0,0.0,0.1085,Rank-biserial r,small,True,***,mixed_2,mixed_4
+mixed_2 vs mixed_4,mean_d2,Detector D2 mean,0.1921,0.193,90000,90000,Mann-Whitney U,4047512932.0,0.793298,0.0006,Rank-biserial r,negligible,False,ns,mixed_2,mixed_4
+mixed_2 vs mixed_4,mean_d3,Detector D3 mean,0.2904,0.2639,90000,90000,Mann-Whitney U,4274618430.5,0.0,-0.0555,Rank-biserial r,negligible,True,***,mixed_2,mixed_4
+mixed_2 vs mixed_4,mean_d4,Detector D4 mean,0.0,0.0,90000,90000,Mann-Whitney U,4050000000.0,1.0,0.0,Rank-biserial r,negligible,False,ns,mixed_2,mixed_4
+mixed_2 vs mixed_4,mean_d5,Detector D5 mean,0.0231,0.0237,90000,90000,Mann-Whitney U,4016476284.0,0.000187,0.0083,Rank-biserial r,negligible,True,***,mixed_2,mixed_4
