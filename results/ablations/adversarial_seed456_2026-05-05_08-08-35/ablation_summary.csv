@@ -1,7 +1,0 @@
-condition,wolf_strategy,suspicion_active,n_games,village_win_rate,wolf_vote_precision,wolf_vote_recall,false_accusation_rate,sigma_gap,combined_gap,mean_d4,mean_d5,avg_days
-standard_no_susp,standard,False,10000,0.326,0.2755,0.6094,0.7245,,,,,2.5735
-standard_with_susp,standard,True,10000,0.0,0.0,0.0,1.0,-0.029,0.0036,0.0,0.0,2.0
-bus_driver_no_susp,bus_driver,False,10000,0.326,0.2755,0.6094,0.7245,,,,,2.5735
-bus_driver_with_susp,bus_driver,True,10000,0.7548,0.3444,0.872,0.6556,0.0667,0.042,0.0,0.0,2.982
-false_claimer_no_susp,false_claimer,False,10000,0.326,0.2755,0.6094,0.7245,,,,,2.5735
-false_claimer_with_susp,false_claimer,True,10000,0.0,0.0,0.0,1.0,-0.0323,0.0022,0.0,0.0418,2.0
