@@ -7,15 +7,15 @@
 # Total: 9 runs × 10,000 games = 90,000 games
 # Estimated time: ~25-28 hrs on a standard laptop (runs sequentially)
 #
-# Usage (from WSL, anywhere):
-#   bash /mnt/c/Users/yasmi/OneDrive/Desktop/Github/Adv-AI-Project/run_mixed2_experiments.sh
+# Usage (from the project root):
+#   bash run_mixed2_experiments.sh
 #
 # Output lands in:
 #   Model_V2/results/<agent>_mixed2_seed<N>_<timestamp>/
 
 set -euo pipefail
 
-PROJECT_DIR="/mnt/c/Users/yasmi/OneDrive/Desktop/Github/Adv-AI-Project"
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MODEL_DIR="${PROJECT_DIR}/Model_V2"
 PYTHON="python3"
 

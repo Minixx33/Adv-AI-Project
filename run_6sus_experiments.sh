@@ -6,17 +6,17 @@
 #
 # Total: 9 runs x 10,000 games = 90,000 games
 #
-# Usage (from WSL, anywhere):
-#   bash /mnt/c/Users/yasmi/OneDrive/Desktop/Github/Adv-AI-Project/run_6sus_experiments.sh
+# Usage (from the project root):
+#   bash run_6sus_experiments.sh
 
 set -euo pipefail
 
-PROJECT_DIR="/mnt/c/Users/yasmi/OneDrive/Desktop/Github/Adv-AI-Project"
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MODEL_DIR="${PROJECT_DIR}/Model_V2"
 PYTHON="python3"
 
 SEEDS=(42 123 456)
-AGENTS=("bayesian" "heuristic" "mcts")
+AGENTS=("mcts")
 
 cd "$MODEL_DIR"
 

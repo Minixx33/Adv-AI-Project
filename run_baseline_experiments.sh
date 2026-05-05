@@ -6,20 +6,20 @@
 #
 # Total: 15 runs x 10,000 games = 150,000 games
 #
-# Usage (from WSL, anywhere):
-#   bash /mnt/c/Users/yasmi/OneDrive/Desktop/Github/Adv-AI-Project/run_baseline_experiments.sh
+# Usage (from the project root):
+#   bash run_baseline_experiments.sh
 #
 # Output lands in:
 #   Model_V2/results/<agent>_baseline_seed<N>_<timestamp>/
 
 set -euo pipefail
 
-PROJECT_DIR="/mnt/c/Users/kenzi/Documents/GitHub/Adv-AI-Project"
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MODEL_DIR="${PROJECT_DIR}/Model_V2"
 PYTHON="python3"
 
 SEEDS=(42 123 456)
-AGENTS=("random" "heuristic" "bayesian" "mcts" "logic")
+AGENTS=("logic" "mcts")
 
 cd "$MODEL_DIR"
 
@@ -57,4 +57,4 @@ done
 echo "========================================"
 echo "  All runs complete."
 echo "  Results in: ${MODEL_DIR}/results/"
-echo "========================================"
+echo "===============
