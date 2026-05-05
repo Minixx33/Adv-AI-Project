@@ -104,31 +104,31 @@ Total games        : 10000
 
 ====================================================
   Run complete : 10000 games
-  Output dir  : ./results/mcts_6sus_seed42_2026-05-05_02-42-58
+  Output dir  : ./results/mcts_6sus_seed123_2026-05-05_03-19-27
 ----------------------------------------------------
-  Village wins : 1736/10000  (17.4%)
-  Wolf wins    : 8264/10000  (82.6%)
+  Village wins : 1729/10000  (17.3%)
+  Wolf wins    : 8271/10000  (82.7%)
   Avg days     : 2.40
 ----------------------------------------------------
-  Total votes       : 156028
+  Total votes       : 155972
   Wolf vote prec.   : 0.253
   Wolf vote recall  : 0.892
   False accuse rate : 0.747
-  Avg wolves exec'd : 0.63
+  Avg wolves exec'd : 0.62
 ----------------------------------------------------
   Win rate by agent type + role:
-    Susp     | Villager  : 17.4%  (n=6647)
-    Susp     | Seer      : 18.2%  (n=1702)
-    Susp     | Possessed : 83.7%  (n=1651)
+    Susp     | Villager  : 17.3%  (n=6644)
+    Susp     | Seer      : 18.1%  (n=1700)
+    Susp     | Possessed : 83.8%  (n=1656)
     ----------
-    Non-susp | Villager  : 17.4%
-    Non-susp | Seer      : 17.4%
-    Non-susp | Werewolf  : 82.6%
-    Non-susp | Possessed : 82.6%
+    Non-susp | Villager  : 17.3%
+    Non-susp | Seer      : 17.3%
+    Non-susp | Werewolf  : 82.7%
+    Non-susp | Possessed : 82.7%
 ----------------------------------------------------
-  Sigma gap          : 0.0197
-  Combined score gap : 0.0129
-  Susp-agent wins    : 16944/60000  (28.2%)
-  Non-susp wins      : 16528/20000  (82.6%)
+  Sigma gap          : 0.0198
+  Combined score gap : 0.0130
+  Susp-agent wins    : 16916/60000  (28.2%)
+  Non-susp wins      : 16542/20000  (82.7%)
 ====================================================
 
